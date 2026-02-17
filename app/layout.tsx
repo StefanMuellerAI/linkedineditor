@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Instrument_Serif } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -30,7 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${dmSans.variable} ${instrumentSerif.variable}`}>
+    <html lang="de" className={`dark ${dmSans.variable} ${instrumentSerif.variable}`} suppressHydrationWarning>
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive" src="/theme-init.js" />
+      </head>
       <body className="font-sans min-h-screen">{children}</body>
     </html>
   );

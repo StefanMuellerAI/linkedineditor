@@ -1,34 +1,31 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Toolbar from "./Toolbar";
 import TextField from "./TextField";
 import Preview from "./Preview";
 import CharCount from "./CharCount";
+import ThemeToggle from "./ThemeToggle";
+import TemplatePicker from "./TemplatePicker";
+import { useHistory, EditorState } from "@/lib/useHistory";
+import { PostTemplate } from "@/lib/templates";
 
 export default function Editor() {
-  const [hook, setHook] = useState("");
-  const [content, setContent] = useState("");
-  const [cta, setCta] = useState("");
+  const { state, canUndo, canRedo, setField, setAll, undo, redo } = useHistory();
+  const { hook, content, cta } = state;
+
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [activeFieldRef, setActiveFieldRef] =
     useState<React.RefObject<HTMLTextAreaElement> | null>(null);
 
   const fields: Record<string, string> = { hook, content, cta };
 
-  const handleFieldUpdate = useCallback((fieldId: string, value: string) => {
-    switch (fieldId) {
-      case "hook":
-        setHook(value);
-        break;
-      case "content":
-        setContent(value);
-        break;
-      case "cta":
-        setCta(value);
-        break;
-    }
-  }, []);
+  const handleFieldUpdate = useCallback(
+    (fieldId: string, value: string) => {
+      setField(fieldId as keyof EditorState, value);
+    },
+    [setField]
+  );
 
   const handleFocus = useCallback(
     (fieldId: string, ref: React.RefObject<HTMLTextAreaElement>) => {
@@ -38,10 +35,39 @@ export default function Editor() {
     []
   );
 
+  const handleTemplateSelect = useCallback(
+    (template: PostTemplate) => {
+      setAll({ hook: template.hook, content: template.content, cta: template.cta });
+    },
+    [setAll]
+  );
+
+  const hasContent = hook.trim().length > 0 || content.trim().length > 0 || cta.trim().length > 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (!isMod) return;
+
+      if (e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <header className="text-center mb-8 pt-8 sm:pt-12">
+      <header className="relative text-center mb-8 pt-8 sm:pt-12">
+        <div className="absolute right-0 top-8 sm:top-12">
+          <ThemeToggle />
+        </div>
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-editor-text mb-2">
           LinkedIn Post Editor
         </h1>
@@ -56,12 +82,19 @@ export default function Editor() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Editor Side */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Toolbar */}
+          {/* Template Picker + Toolbar */}
+          <div className="flex items-center gap-3">
+            <TemplatePicker onSelect={handleTemplateSelect} hasContent={hasContent} />
+          </div>
           <Toolbar
             activeFieldRef={activeFieldRef}
             activeFieldId={activeFieldId}
             onUpdateField={handleFieldUpdate}
             fields={fields}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
           />
 
           {/* Text Fields */}
@@ -70,7 +103,7 @@ export default function Editor() {
               label="Hook"
               sublabel="Der Aufhänger"
               value={hook}
-              onChange={setHook}
+              onChange={(v) => setField("hook", v)}
               fieldId="hook"
               onFocus={handleFocus}
               placeholder="Die erste Zeile, die zum Weiterlesen animiert..."
@@ -80,7 +113,7 @@ export default function Editor() {
               label="Inhalt"
               sublabel="Die Hauptbotschaft"
               value={content}
-              onChange={setContent}
+              onChange={(v) => setField("content", v)}
               fieldId="content"
               onFocus={handleFocus}
               placeholder="Der Kern deines Posts..."
@@ -90,7 +123,7 @@ export default function Editor() {
               label="CTA"
               sublabel="Call to Action"
               value={cta}
-              onChange={setCta}
+              onChange={(v) => setField("cta", v)}
               fieldId="cta"
               onFocus={handleFocus}
               placeholder="Was soll der Leser als nächstes tun?"

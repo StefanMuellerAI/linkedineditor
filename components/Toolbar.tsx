@@ -18,6 +18,10 @@ interface ToolbarProps {
   activeFieldId: string | null;
   onUpdateField: (fieldId: string, value: string) => void;
   fields: Record<string, string>;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export default function Toolbar({
@@ -25,6 +29,10 @@ export default function Toolbar({
   activeFieldId,
   onUpdateField,
   fields,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: ToolbarProps) {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showAscii, setShowAscii] = useState(false);
@@ -127,6 +135,32 @@ export default function Toolbar({
 
   return (
     <div className="relative flex items-center gap-1 px-3 py-2 bg-editor-surface border border-editor-border rounded-xl">
+      <ToolbarButton
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Rückgängig (Ctrl+Z)"
+        ariaLabel="Undo"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 105.64-12.36L1 10" />
+        </svg>
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Wiederholen (Ctrl+Shift+Z)"
+        ariaLabel="Redo"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 11-5.64-12.36L23 10" />
+        </svg>
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-editor-border mx-1" />
+
       <ToolbarButton
         onClick={handleBold}
         disabled={noField}

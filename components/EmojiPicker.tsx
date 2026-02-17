@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -10,8 +10,10 @@ interface EmojiPickerPopoverProps {
 
 export default function EmojiPickerPopover({ onSelect }: EmojiPickerPopoverProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         const event = new MouseEvent("click", { bubbles: true });
@@ -30,7 +32,7 @@ export default function EmojiPickerPopover({ onSelect }: EmojiPickerPopoverProps
       <Picker
         data={data}
         onEmojiSelect={onSelect}
-        theme="dark"
+        theme={isDark ? "dark" : "light"}
         previewPosition="none"
         skinTonePosition="search"
         set="native"
