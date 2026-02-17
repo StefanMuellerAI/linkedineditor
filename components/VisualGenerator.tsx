@@ -6,6 +6,7 @@ interface VisualGeneratorProps {
   open: boolean;
   onClose: () => void;
   postText: string;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
 const TYPES = [
@@ -37,7 +38,7 @@ const selectClasses = `w-full bg-editor-bg border border-editor-border rounded-l
   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%238888AA%22%20stroke-width%3D%222.5%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')]
   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-8`;
 
-export default function VisualGenerator({ open, onClose, postText }: VisualGeneratorProps) {
+export default function VisualGenerator({ open, onClose, postText, onImageGenerated }: VisualGeneratorProps) {
   const [type, setType] = useState("infographic");
   const [style, setStyle] = useState("flat");
   const [aspectRatio, setAspectRatio] = useState("1:1");
@@ -89,6 +90,7 @@ export default function VisualGenerator({ open, onClose, postText }: VisualGener
       }
 
       setImageUrl(data.image);
+      if (onImageGenerated) onImageGenerated(data.image);
     } catch {
       setError("Netzwerkfehler. Bitte pruefe deine Verbindung.");
     } finally {

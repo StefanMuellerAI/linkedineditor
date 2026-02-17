@@ -22,6 +22,7 @@ export default function Editor() {
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showVisualGenerator, setShowVisualGenerator] = useState(false);
   const [visualEnabled, setVisualEnabled] = useState(false);
+  const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
   const fields: Record<string, string> = { hook, content, cta };
 
@@ -172,8 +173,50 @@ export default function Editor() {
 
         {/* Preview Side */}
         <div className="lg:w-[380px] xl:w-[420px] shrink-0">
-          <div className="lg:sticky lg:top-6">
+          <div className="lg:sticky lg:top-6 space-y-4">
             <Preview hook={hook} content={content} cta={cta} />
+
+            {/* Generated Visual */}
+            {generatedVisual && (
+              <div className="bg-editor-surface border border-editor-border rounded-xl overflow-hidden animate-in">
+                <div className="flex items-center justify-between px-3 pt-3 pb-1">
+                  <span className="text-xs font-medium text-editor-muted uppercase tracking-wider">
+                    Generiertes Visual
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <a
+                      href={generatedVisual}
+                      download={`linkedin-visual-${Date.now()}.png`}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-editor-muted hover:text-editor-text hover:bg-editor-surface-hover transition-colors"
+                      title="Herunterladen"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </a>
+                    <button
+                      onClick={() => setGeneratedVisual(null)}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-editor-muted hover:text-red-400 hover:bg-editor-surface-hover transition-colors"
+                      title="Entfernen"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="p-2">
+                  <img
+                    src={generatedVisual}
+                    alt="Generiertes Visual"
+                    className="w-full h-auto rounded-lg"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -190,6 +233,7 @@ export default function Editor() {
         open={showVisualGenerator}
         onClose={() => setShowVisualGenerator(false)}
         postText={postText}
+        onImageGenerated={setGeneratedVisual}
       />
 
       {/* Footer */}
