@@ -85,7 +85,10 @@ Style: ${stylePrompt}
 
 Format: ${ratioPrompt}
 
-IMPORTANT: Do NOT include any readable text from the post in the image. Instead, represent the concepts and ideas visually through icons, illustrations, diagrams and visual metaphors. The image should complement the text, not duplicate it. Do not write full sentences in the image.
+IMPORTANT RULES:
+- Any text, labels, headings or captions in the image MUST be in the SAME LANGUAGE as the post content below. If the post is in German, all text in the image must be in German. If in English, use English. Never mix languages.
+- Keep text in the image short: use keywords, short labels and headings only -- no full sentences.
+- The image should complement the post, not duplicate it. Represent concepts visually through icons, illustrations, diagrams and visual metaphors.
 
 LinkedIn Post Content:
 ---
