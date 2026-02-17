@@ -7,6 +7,7 @@ import Preview from "./Preview";
 import CharCount from "./CharCount";
 import ThemeToggle from "./ThemeToggle";
 import TemplatePicker from "./TemplatePicker";
+import AIGenerator from "./AIGenerator";
 import { useHistory, EditorState } from "@/lib/useHistory";
 import { PostTemplate } from "@/lib/templates";
 
@@ -17,6 +18,7 @@ export default function Editor() {
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [activeFieldRef, setActiveFieldRef] =
     useState<React.RefObject<HTMLTextAreaElement> | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   const fields: Record<string, string> = { hook, content, cta };
 
@@ -38,6 +40,13 @@ export default function Editor() {
   const handleTemplateSelect = useCallback(
     (template: PostTemplate) => {
       setAll({ hook: template.hook, content: template.content, cta: template.cta });
+    },
+    [setAll]
+  );
+
+  const handleAIGenerate = useCallback(
+    (result: { hook: string; content: string; cta: string }) => {
+      setAll(result);
     },
     [setAll]
   );
@@ -82,10 +91,12 @@ export default function Editor() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Editor Side */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Template Picker + Toolbar */}
+          {/* Template Picker */}
           <div className="flex items-center gap-3">
             <TemplatePicker onSelect={handleTemplateSelect} hasContent={hasContent} />
           </div>
+
+          {/* Toolbar */}
           <Toolbar
             activeFieldRef={activeFieldRef}
             activeFieldId={activeFieldId}
@@ -95,6 +106,7 @@ export default function Editor() {
             canRedo={canRedo}
             onUndo={undo}
             onRedo={redo}
+            onAIGenerate={() => setShowAIGenerator(true)}
           />
 
           {/* Text Fields */}
@@ -144,6 +156,13 @@ export default function Editor() {
           </div>
         </div>
       </div>
+
+      {/* AI Generator Modal */}
+      <AIGenerator
+        open={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
+        onGenerate={handleAIGenerate}
+      />
 
       {/* Footer */}
       <footer className="text-center py-8 mt-12 border-t border-editor-border/30">
