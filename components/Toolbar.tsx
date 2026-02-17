@@ -12,6 +12,8 @@ import {
 } from "@/lib/unicode";
 import EmojiPickerPopover from "./EmojiPicker";
 import AsciiPicker from "./AsciiPicker";
+import TemplatePicker from "./TemplatePicker";
+import { PostTemplate } from "@/lib/templates";
 
 interface ToolbarProps {
   activeFieldRef: React.RefObject<HTMLTextAreaElement> | null;
@@ -23,6 +25,8 @@ interface ToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onAIGenerate: () => void;
+  onTemplateSelect: (template: PostTemplate) => void;
+  hasContent: boolean;
 }
 
 export default function Toolbar({
@@ -35,6 +39,8 @@ export default function Toolbar({
   onUndo,
   onRedo,
   onAIGenerate,
+  onTemplateSelect,
+  hasContent,
 }: ToolbarProps) {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showAscii, setShowAscii] = useState(false);
@@ -137,6 +143,10 @@ export default function Toolbar({
 
   return (
     <div className="relative flex items-center gap-1 px-3 py-2 bg-editor-surface border border-editor-border rounded-xl">
+      <TemplatePicker onSelect={onTemplateSelect} hasContent={hasContent} />
+
+      <div className="w-px h-5 bg-editor-border mx-1" />
+
       <ToolbarButton
         onClick={onUndo}
         disabled={!canUndo}

@@ -6,11 +6,10 @@ import TextField from "./TextField";
 import Preview from "./Preview";
 import CharCount from "./CharCount";
 import ThemeToggle from "./ThemeToggle";
-import TemplatePicker from "./TemplatePicker";
+import { PostTemplate } from "@/lib/templates";
 import AIGenerator from "./AIGenerator";
 import VisualGenerator from "./VisualGenerator";
 import { useHistory, EditorState } from "@/lib/useHistory";
-import { PostTemplate } from "@/lib/templates";
 
 export default function Editor() {
   const { state, canUndo, canRedo, setField, setAll, undo, redo } = useHistory();
@@ -107,11 +106,6 @@ export default function Editor() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Editor Side */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Template Picker */}
-          <div className="flex items-center gap-3">
-            <TemplatePicker onSelect={handleTemplateSelect} hasContent={hasContent} />
-          </div>
-
           {/* Toolbar */}
           <Toolbar
             activeFieldRef={activeFieldRef}
@@ -123,6 +117,8 @@ export default function Editor() {
             onUndo={undo}
             onRedo={redo}
             onAIGenerate={() => setShowAIGenerator(true)}
+            onTemplateSelect={handleTemplateSelect}
+            hasContent={hasContent}
           />
 
           {/* Text Fields */}
