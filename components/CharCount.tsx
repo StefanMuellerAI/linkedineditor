@@ -8,9 +8,11 @@ interface CharCountProps {
   hook: string;
   content: string;
   cta: string;
+  onVisualGenerate?: () => void;
+  visualEnabled?: boolean;
 }
 
-export default function CharCount({ hook, content, cta }: CharCountProps) {
+export default function CharCount({ hook, content, cta, onVisualGenerate, visualEnabled = false }: CharCountProps) {
   const [copied, setCopied] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -96,6 +98,30 @@ export default function CharCount({ hook, content, cta }: CharCountProps) {
               <line x1="6" y1="20" x2="6" y2="14" />
             </svg>
             <span className="hidden sm:inline">Analyse</span>
+          </span>
+        </button>
+
+        {/* Visual Generator */}
+        <button
+          onClick={onVisualGenerate}
+          disabled={!visualEnabled || isEmpty}
+          title={!visualEnabled ? "GEMINI_API_KEY nicht konfiguriert" : "Visual zum Post generieren"}
+          className={`
+            px-3 py-3 rounded-xl text-sm font-medium shrink-0
+            border transition-all duration-200
+            ${!visualEnabled || isEmpty
+              ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
+              : "bg-editor-surface text-editor-muted border-editor-border hover:text-emerald-500 hover:border-emerald-500/30"
+            }
+          `}
+        >
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span className="hidden sm:inline">Visual</span>
           </span>
         </button>
 

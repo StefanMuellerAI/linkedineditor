@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Toolbar from "./Toolbar";
 import TextField from "./TextField";
 import Preview from "./Preview";
@@ -8,6 +8,7 @@ import CharCount from "./CharCount";
 import ThemeToggle from "./ThemeToggle";
 import TemplatePicker from "./TemplatePicker";
 import AIGenerator from "./AIGenerator";
+import VisualGenerator from "./VisualGenerator";
 import { useHistory, EditorState } from "@/lib/useHistory";
 import { PostTemplate } from "@/lib/templates";
 
@@ -19,8 +20,22 @@ export default function Editor() {
   const [activeFieldRef, setActiveFieldRef] =
     useState<React.RefObject<HTMLTextAreaElement> | null>(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showVisualGenerator, setShowVisualGenerator] = useState(false);
+  const [visualEnabled, setVisualEnabled] = useState(false);
 
   const fields: Record<string, string> = { hook, content, cta };
+
+  const postText = useMemo(() => {
+    const parts = [hook, content, cta].filter((p) => p.trim().length > 0);
+    return parts.join("\n\n");
+  }, [hook, content, cta]);
+
+  useEffect(() => {
+    fetch("/api/visual/check")
+      .then((res) => res.json())
+      .then((data) => setVisualEnabled(data.enabled === true))
+      .catch(() => setVisualEnabled(false));
+  }, []);
 
   const handleFieldUpdate = useCallback(
     (fieldId: string, value: string) => {
@@ -145,7 +160,13 @@ export default function Editor() {
 
           {/* Char Count + Copy */}
           <div className="pt-2">
-            <CharCount hook={hook} content={content} cta={cta} />
+            <CharCount
+              hook={hook}
+              content={content}
+              cta={cta}
+              visualEnabled={visualEnabled}
+              onVisualGenerate={() => setShowVisualGenerator(true)}
+            />
           </div>
         </div>
 
@@ -162,6 +183,13 @@ export default function Editor() {
         open={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}
         onGenerate={handleAIGenerate}
+      />
+
+      {/* Visual Generator Modal */}
+      <VisualGenerator
+        open={showVisualGenerator}
+        onClose={() => setShowVisualGenerator(false)}
+        postText={postText}
       />
 
       {/* Footer */}
