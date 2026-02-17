@@ -165,6 +165,41 @@ export function removeItalic(text: string): string {
     .join("");
 }
 
+function isEmoji(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x1F600 && codePoint <= 0x1F64F) ||
+    (codePoint >= 0x1F300 && codePoint <= 0x1F5FF) ||
+    (codePoint >= 0x1F680 && codePoint <= 0x1F6FF) ||
+    (codePoint >= 0x1F1E0 && codePoint <= 0x1F1FF) ||
+    (codePoint >= 0x2600 && codePoint <= 0x26FF) ||
+    (codePoint >= 0x2700 && codePoint <= 0x27BF) ||
+    (codePoint >= 0xFE00 && codePoint <= 0xFE0F) ||
+    (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) ||
+    (codePoint >= 0x1FA00 && codePoint <= 0x1FA6F) ||
+    (codePoint >= 0x1FA70 && codePoint <= 0x1FAFF) ||
+    (codePoint >= 0xE0020 && codePoint <= 0xE007F) ||
+    codePoint === 0x200D ||
+    codePoint === 0x20E3 ||
+    codePoint === 0xFE0F
+  );
+}
+
+export function stripFormatting(text: string): string {
+  const chars = toArray(text);
+  return chars
+    .map((char) => {
+      if (allBoldChars.has(char) || allItalicChars.has(char) || allBoldItalicChars.has(char)) {
+        return toNormal(char);
+      }
+      const cp = char.codePointAt(0);
+      if (cp !== undefined && isEmoji(cp)) {
+        return "";
+      }
+      return char;
+    })
+    .join("");
+}
+
 export function isSelectionBold(text: string): boolean {
   const chars = toArray(text);
   const letterChars = chars.filter(

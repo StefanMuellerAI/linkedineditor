@@ -8,6 +8,7 @@ import {
   removeItalic,
   isSelectionBold,
   isSelectionItalic,
+  stripFormatting,
 } from "@/lib/unicode";
 import EmojiPickerPopover from "./EmojiPicker";
 import AsciiPicker from "./AsciiPicker";
@@ -83,6 +84,12 @@ export default function Toolbar({
     }
   }, [getSelection, applyFormat]);
 
+  const handleStrip = useCallback(() => {
+    const sel = getSelection();
+    if (!sel || !sel.hasSelection) return;
+    applyFormat(stripFormatting);
+  }, [getSelection, applyFormat]);
+
   const insertAtCursor = useCallback(
     (text: string) => {
       const el = activeFieldRef?.current;
@@ -136,6 +143,18 @@ export default function Toolbar({
         ariaLabel="Italic"
       >
         <span className="italic text-sm font-serif">I</span>
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={handleStrip}
+        disabled={noField}
+        title="Formatierung entfernen & Emojis löschen (Text markieren)"
+        ariaLabel="Strip Formatting"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0l4 4c.8.8.8 2 0 2.8L12 18" />
+          <path d="M7 20l-4-4" />
+        </svg>
       </ToolbarButton>
 
       <div className="w-px h-5 bg-editor-border mx-1" />
