@@ -26,7 +26,9 @@ function checkRateLimit(ip: string): boolean {
 }
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import("pdf-parse")).default as (buf: Buffer) => Promise<{ numpages: number; text: string }>;
+  // Import the internal lib directly to avoid the broken test-file
+  // loading in pdf-parse/index.js (module.parent bug)
+  const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default as (buf: Buffer) => Promise<{ numpages: number; text: string }>;
   const data = await pdfParse(buffer);
 
   if (data.numpages > MAX_PDF_PAGES) {
