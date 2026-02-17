@@ -6,9 +6,11 @@ interface PreviewProps {
   hook: string;
   content: string;
   cta: string;
+  visualUrl?: string | null;
+  onRemoveVisual?: () => void;
 }
 
-export default function Preview({ hook, content, cta }: PreviewProps) {
+export default function Preview({ hook, content, cta, visualUrl, onRemoveVisual }: PreviewProps) {
   const [expanded, setExpanded] = useState(false);
 
   const fullText = useMemo(() => {
@@ -98,6 +100,39 @@ export default function Preview({ hook, content, cta }: PreviewProps) {
             </div>
           )}
         </div>
+
+        {/* Visual / Image */}
+        {visualUrl && (
+          <div className="relative group">
+            <img src={visualUrl} alt="Post Visual" className="w-full h-auto" />
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <a
+                href={visualUrl}
+                download={`linkedin-visual-${Date.now()}.png`}
+                className="w-7 h-7 flex items-center justify-center rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"
+                title="Herunterladen"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </a>
+              {onRemoveVisual && (
+                <button
+                  onClick={onRemoveVisual}
+                  className="w-7 h-7 flex items-center justify-center rounded-md bg-black/60 text-white hover:bg-red-500/80 transition-colors"
+                  title="Bild entfernen"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Engagement Bar */}
         <div className="px-4 py-2 border-t border-linkedin-border">

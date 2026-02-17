@@ -308,7 +308,10 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
             </div>
           )}
 
-          {/* Generate Button */}
+        </div>
+
+        {/* Generate Button -- fixed at bottom */}
+        <div className="px-5 pb-5 pt-3 shrink-0 border-t border-editor-border/50">
           <button
             onClick={handleGenerate}
             disabled={loading || !topic.trim()}
