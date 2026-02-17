@@ -4,12 +4,8 @@ import { TEMPLATES } from "@/lib/templates";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = [
-  "text/plain",
-  "text/markdown",
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+const MAX_PDF_PAGES = 20;
+const ALLOWED_EXTENSIONS = ["txt", "md", "pdf", "docx"];
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
@@ -27,22 +23,44 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+  const uint8Array = new Uint8Array(buffer);
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+  const doc = await loadingTask.promise;
+
+  if (doc.numPages > MAX_PDF_PAGES) {
+    throw new Error(`PDF hat ${doc.numPages} Seiten. Maximal ${MAX_PDF_PAGES} Seiten erlaubt.`);
+  }
+
+  const textParts: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .filter((item) => "str" in item && typeof (item as Record<string, unknown>).str === "string")
+      .map((item) => (item as Record<string, unknown>).str as string)
+      .join(" ");
+    textParts.push(pageText);
+  }
+
+  return textParts.join("\n\n");
+}
+
 async function extractText(file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase();
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  if (ext === "txt" || ext === "md" || file.type === "text/plain" || file.type === "text/markdown") {
+  if (ext === "txt" || ext === "md") {
     return buffer.toString("utf-8");
   }
 
-  if (ext === "pdf" || file.type === "application/pdf") {
-    const pdfModule = await import("pdf-parse");
-    const pdfParse = pdfModule.default || pdfModule;
-    const data = await (pdfParse as (buf: Buffer) => Promise<{ text: string }>)(buffer);
-    return data.text;
+  if (ext === "pdf") {
+    return extractTextFromPdf(buffer);
   }
 
-  if (ext === "docx" || file.type.includes("wordprocessingml")) {
+  if (ext === "docx") {
     const mammoth = await import("mammoth");
     const result = await mammoth.extractRawText({ buffer });
     return result.value;
@@ -72,6 +90,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const topic = formData.get("topic") as string | null;
     const templateId = formData.get("templateId") as string | null;
+    const addressMode = (formData.get("addressMode") as "du" | "sie" | null) || "du";
+    const tone = (formData.get("tone") as string | null) || "professionell";
     const file = formData.get("file") as File | null;
 
     if (!topic || topic.trim().length === 0) {
@@ -93,9 +113,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Datei ist zu gross (max 5 MB)." }, { status: 400 });
       }
 
-      const isAllowed = ALLOWED_TYPES.some((t) => file.type.includes(t)) ||
-        ["txt", "md", "pdf", "docx"].includes(file.name.split(".").pop()?.toLowerCase() || "");
-      if (!isAllowed) {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
         return NextResponse.json(
           { error: "Nicht unterstuetzter Dateityp. Erlaubt: .txt, .md, .pdf, .docx" },
           { status: 400 }
@@ -105,7 +124,7 @@ export async function POST(request: NextRequest) {
       documentText = await extractText(file);
     }
 
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt(addressMode, tone);
     const userPrompt = buildUserPrompt({
       templateName: template.id,
       templateDescription: template.description,
@@ -114,6 +133,8 @@ export async function POST(request: NextRequest) {
       templateCta: template.cta,
       topic: topic.trim(),
       documentText,
+      addressMode,
+      tone,
     });
 
     const anthropic = new Anthropic({ apiKey });
@@ -160,6 +181,9 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message : "Unbekannter Fehler";
     if (message.includes("authentication") || message.includes("api_key")) {
       return NextResponse.json({ error: "API-Key ist ungueltig." }, { status: 401 });
+    }
+    if (message.includes("Seiten")) {
+      return NextResponse.json({ error: message }, { status: 400 });
     }
     return NextResponse.json(
       { error: `Fehler bei der Generierung: ${message}` },

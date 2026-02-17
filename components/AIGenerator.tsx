@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { TEMPLATES } from "@/lib/templates";
+import { TONE_OPTIONS } from "@/lib/prompts";
 
 interface AIGeneratorProps {
   open: boolean;
@@ -17,9 +18,18 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const selectClasses = `w-full bg-editor-bg border border-editor-border rounded-lg px-3 py-2.5
+  text-sm text-editor-text
+  focus:border-editor-accent focus:ring-1 focus:ring-editor-accent/30 outline-none
+  disabled:opacity-50 transition-colors appearance-none
+  bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%238888AA%22%20stroke-width%3D%222.5%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')]
+  bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-8`;
+
 export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorProps) {
   const [topic, setTopic] = useState("");
   const [templateId, setTemplateId] = useState(USABLE_TEMPLATES[0]?.id || "aida");
+  const [addressMode, setAddressMode] = useState<"du" | "sie">("du");
+  const [tone, setTone] = useState("professionell");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +88,8 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
       const formData = new FormData();
       formData.append("topic", topic.trim());
       formData.append("templateId", templateId);
+      formData.append("addressMode", addressMode);
+      formData.append("tone", tone);
       if (file) formData.append("file", file);
 
       const res = await fetch("/api/generate", { method: "POST", body: formData });
@@ -108,10 +120,10 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-2xl shadow-2xl shadow-black/40 animate-in overflow-hidden"
+        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-2xl shadow-2xl shadow-black/40 animate-in overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-editor-accent/15 flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-editor-accent">
@@ -135,7 +147,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
           </button>
         </div>
 
-        <div className="px-5 pb-5 space-y-4">
+        <div className="px-5 pb-5 space-y-4 overflow-y-auto">
           {/* Topic */}
           <div>
             <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
@@ -152,6 +164,39 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
                          focus:border-editor-accent focus:ring-1 focus:ring-editor-accent/30 outline-none
                          resize-none disabled:opacity-50 transition-colors"
             />
+          </div>
+
+          {/* Anrede + Tonalitaet nebeneinander */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
+                Anrede
+              </label>
+              <select
+                value={addressMode}
+                onChange={(e) => setAddressMode(e.target.value as "du" | "sie")}
+                disabled={loading}
+                className={selectClasses}
+              >
+                <option value="du">Du (informell)</option>
+                <option value="sie">Sie (formell)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
+                Tonalität
+              </label>
+              <select
+                value={tone}
+                onChange={(e) => setTone(e.target.value)}
+                disabled={loading}
+                className={selectClasses}
+              >
+                {TONE_OPTIONS.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* File Upload */}
@@ -204,7 +249,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
                 <span className="text-xs text-editor-muted">
                   Datei hierher ziehen oder <span className="text-editor-accent">durchsuchen</span>
                 </span>
-                <span className="text-[10px] text-editor-muted/60">.txt, .md, .pdf, .docx (max 5 MB)</span>
+                <span className="text-[10px] text-editor-muted/60">.txt, .md, .pdf (max 20 Seiten), .docx -- max 5 MB</span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -225,12 +270,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               disabled={loading}
-              className="w-full bg-editor-bg border border-editor-border rounded-lg px-3 py-2.5
-                         text-sm text-editor-text
-                         focus:border-editor-accent focus:ring-1 focus:ring-editor-accent/30 outline-none
-                         disabled:opacity-50 transition-colors appearance-none
-                         bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%238888AA%22%20stroke-width%3D%222.5%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')]
-                         bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-8"
+              className={selectClasses}
             >
               {USABLE_TEMPLATES.map((tpl) => (
                 <option key={tpl.id} value={tpl.id}>
