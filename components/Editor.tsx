@@ -167,6 +167,7 @@ export default function Editor() {
               cta={cta}
               visualEnabled={visualEnabled}
               onVisualGenerate={() => setShowVisualGenerator(true)}
+              onImport={(data) => setAll(data)}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { MAX_CHARS } from "@/lib/constants";
 import PostAnalytics from "./PostAnalytics";
 
@@ -10,11 +10,48 @@ interface CharCountProps {
   cta: string;
   onVisualGenerate?: () => void;
   visualEnabled?: boolean;
+  onImport?: (data: { hook: string; content: string; cta: string }) => void;
 }
 
-export default function CharCount({ hook, content, cta, onVisualGenerate, visualEnabled = false }: CharCountProps) {
+function exportToMarkdown(hook: string, content: string, cta: string): string {
+  return `# Hook\n\n${hook}\n\n# Inhalt\n\n${content}\n\n# CTA\n\n${cta}\n`;
+}
+
+function parseMarkdown(md: string): { hook: string; content: string; cta: string } | null {
+  const sections: Record<string, string> = {};
+  let currentKey: string | null = null;
+  const lines = md.split("\n");
+
+  for (const line of lines) {
+    const heading = line.match(/^#\s+(.+)$/);
+    if (heading) {
+      const title = heading[1].trim().toLowerCase();
+      if (title === "hook") currentKey = "hook";
+      else if (title === "inhalt" || title === "content") currentKey = "content";
+      else if (title === "cta" || title === "call to action") currentKey = "cta";
+      else currentKey = null;
+      continue;
+    }
+    if (currentKey) {
+      sections[currentKey] = sections[currentKey]
+        ? sections[currentKey] + "\n" + line
+        : line;
+    }
+  }
+
+  if (!sections.hook && !sections.content && !sections.cta) return null;
+
+  return {
+    hook: (sections.hook || "").trim(),
+    content: (sections.content || "").trim(),
+    cta: (sections.cta || "").trim(),
+  };
+}
+
+export default function CharCount({ hook, content, cta, onVisualGenerate, visualEnabled = false, onImport }: CharCountProps) {
   const [copied, setCopied] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mergedText = useMemo(() => {
     const parts = [hook, content, cta].filter((p) => p.trim().length > 0);
@@ -51,6 +88,39 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
     }
   }, [mergedText, isOverLimit, isEmpty]);
 
+  const handleExport = useCallback(() => {
+    const md = exportToMarkdown(hook, content, cta);
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `linkedin-post-${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [hook, content, cta]);
+
+  const handleImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !onImport) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result as string;
+        const parsed = parseMarkdown(text);
+        if (parsed) {
+          onImport(parsed);
+        } else {
+          alert("Die Datei konnte nicht gelesen werden. Bitte verwende das Format:\n\n# Hook\n...\n# Inhalt\n...\n# CTA\n...");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    },
+    [onImport]
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 px-1">
@@ -77,6 +147,53 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
             )}
           </div>
         </div>
+
+        {/* Import */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          title="Post aus .md importieren"
+          className="px-3 py-3 rounded-xl text-sm font-medium shrink-0
+                     border transition-all duration-200
+                     bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
+        >
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span className="hidden sm:inline">Import</span>
+          </span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".md,.txt"
+          onChange={handleImportFile}
+          className="hidden"
+        />
+
+        {/* Export */}
+        <button
+          onClick={handleExport}
+          disabled={isEmpty}
+          title="Post als .md exportieren"
+          className={`px-3 py-3 rounded-xl text-sm font-medium shrink-0
+                     border transition-all duration-200
+                     ${isEmpty
+                       ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
+                       : "bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
+                     }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span className="hidden sm:inline">Export</span>
+          </span>
+        </button>
 
         {/* Analytics Toggle */}
         <button
