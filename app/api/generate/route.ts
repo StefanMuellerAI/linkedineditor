@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TEMPLATES } from "@/lib/templates";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 
+export const maxDuration = 60;
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_PDF_PAGES = 20;
 const ALLOWED_EXTENSIONS = ["txt", "md", "pdf", "docx"];
@@ -159,12 +161,13 @@ export async function POST(request: NextRequest) {
     let parsed: { hook: string; content: string; cta: string };
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Kein JSON in der Antwort");
+      if (!jsonMatch) throw new Error("Kein JSON gefunden in: " + responseText.slice(0, 200));
       parsed = JSON.parse(jsonMatch[0]);
       if (!parsed.hook || !parsed.content || !parsed.cta) {
-        throw new Error("Unvollstaendige Felder");
+        throw new Error("Felder fehlen in: " + JSON.stringify(Object.keys(parsed)));
       }
-    } catch {
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr, "Raw response:", responseText.slice(0, 500));
       return NextResponse.json(
         { error: "Die KI-Antwort konnte nicht verarbeitet werden. Bitte versuche es erneut." },
         { status: 502 }
@@ -178,15 +181,25 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("Generate API error:", err);
-    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-    if (message.includes("authentication") || message.includes("api_key")) {
-      return NextResponse.json({ error: "API-Key ist ungueltig." }, { status: 401 });
+    const errMsg = err instanceof Error ? err.message : String(err);
+
+    if (errMsg.includes("authentication") || errMsg.includes("api_key") || errMsg.includes("401")) {
+      return NextResponse.json({ error: "API-Key ist ungueltig oder fehlt. Bitte ANTHROPIC_API_KEY in Vercel pruefen." }, { status: 401 });
     }
-    if (message.includes("Seiten")) {
-      return NextResponse.json({ error: message }, { status: 400 });
+    if (errMsg.includes("Seiten")) {
+      return NextResponse.json({ error: errMsg }, { status: 400 });
+    }
+    if (errMsg.includes("Could not process") || errMsg.includes("overloaded") || errMsg.includes("529")) {
+      return NextResponse.json({ error: "Die KI ist gerade ueberlastet. Bitte in 30 Sekunden erneut versuchen." }, { status: 503 });
+    }
+    if (errMsg.includes("credit") || errMsg.includes("billing") || errMsg.includes("402")) {
+      return NextResponse.json({ error: "Anthropic-Konto hat kein Guthaben. Bitte Billing pruefen." }, { status: 402 });
+    }
+    if (errMsg.includes("model") || errMsg.includes("not_found")) {
+      return NextResponse.json({ error: `Modell nicht gefunden: ${process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514"}. Bitte ANTHROPIC_MODEL in Vercel pruefen.` }, { status: 400 });
     }
     return NextResponse.json(
-      { error: `Fehler bei der Generierung: ${message}` },
+      { error: `Fehler bei der Generierung: ${errMsg}` },
       { status: 500 }
     );
   }
