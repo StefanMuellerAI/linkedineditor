@@ -26,29 +26,14 @@ function checkRateLimit(ip: string): boolean {
 }
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  const pdfParse = (await import("pdf-parse")).default as (buf: Buffer) => Promise<{ numpages: number; text: string }>;
+  const data = await pdfParse(buffer);
 
-  const uint8Array = new Uint8Array(buffer);
-  const loadingTask = pdfjsLib.getDocument({ data: uint8Array, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true } as Parameters<typeof pdfjsLib.getDocument>[0]);
-  const doc = await loadingTask.promise;
-
-  if (doc.numPages > MAX_PDF_PAGES) {
-    throw new Error(`PDF hat ${doc.numPages} Seiten. Maximal ${MAX_PDF_PAGES} Seiten erlaubt.`);
+  if (data.numpages > MAX_PDF_PAGES) {
+    throw new Error(`PDF hat ${data.numpages} Seiten. Maximal ${MAX_PDF_PAGES} Seiten erlaubt.`);
   }
 
-  const textParts: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .filter((item) => "str" in item && typeof (item as Record<string, unknown>).str === "string")
-      .map((item) => (item as Record<string, unknown>).str as string)
-      .join(" ");
-    textParts.push(pageText);
-  }
-
-  return textParts.join("\n\n");
+  return data.text;
 }
 
 async function extractText(file: File): Promise<string> {

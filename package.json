@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/fix-pdf-parse.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.75.0",
@@ -15,7 +16,7 @@
     "emoji-mart": "^5.6.0",
     "mammoth": "^1.11.0",
     "next": "^14.2.0",
-    "pdfjs-dist": "^4.4.168",
+    "pdf-parse": "^1.1.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
