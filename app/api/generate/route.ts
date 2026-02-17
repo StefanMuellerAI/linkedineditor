@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
     const topic = formData.get("topic") as string | null;
     const templateId = formData.get("templateId") as string | null;
     const addressMode = (formData.get("addressMode") as "du" | "sie" | null) || "du";
+    const perspective = (formData.get("perspective") as "ich" | "leser" | null) || "ich";
     const tone = (formData.get("tone") as string | null) || "professionell";
     const file = formData.get("file") as File | null;
 
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
       documentText = await extractText(file);
     }
 
-    const systemPrompt = buildSystemPrompt(addressMode, tone);
+    const systemPrompt = buildSystemPrompt(addressMode, tone, perspective);
     const userPrompt = buildUserPrompt({
       templateName: template.id,
       templateDescription: template.description,

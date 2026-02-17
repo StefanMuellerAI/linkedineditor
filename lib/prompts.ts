@@ -62,14 +62,21 @@ export const TONE_OPTIONS = [
   { id: "thoughtleader", label: "Thought Leader" },
 ];
 
-export function buildSystemPrompt(addressMode: "du" | "sie" = "du", tone: string = "professionell"): string {
+export function buildSystemPrompt(addressMode: "du" | "sie" = "du", tone: string = "professionell", perspective: "ich" | "leser" = "ich"): string {
   const addressRule = addressMode === "sie"
     ? "Verwende AUSSCHLIESSLICH die formelle Sie-Anrede. Sieze den Leser konsequent."
     : "Verwende AUSSCHLIESSLICH die informelle Du-Anrede. Duze den Leser konsequent.";
 
+  const perspectiveRule = perspective === "leser"
+    ? "Schreibe AUS DER PERSPEKTIVE DES LESERS. Sprich den Leser direkt an. Verwende NICHT 'Ich habe...', sondern 'Kennst du das...', 'Hast du schon mal...', 'Stell dir vor...'. Der Post soll den Leser in den Mittelpunkt stellen, nicht den Autor."
+    : "Schreibe aus der ICH-PERSPEKTIVE. Teile persoenliche Erfahrungen, Meinungen und Erkenntnisse. Verwende 'Ich habe...', 'Mir ist aufgefallen...', 'Meine Erfahrung zeigt...'.";
+
   const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professionell;
 
   return `Du bist ein erfahrener LinkedIn Content-Stratege. Du schreibst Posts die organisch hohe Reichweite erzielen.
+
+PERSPEKTIVE:
+${perspectiveRule}
 
 ANREDE:
 ${addressRule}

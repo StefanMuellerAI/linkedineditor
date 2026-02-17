@@ -29,6 +29,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
   const [topic, setTopic] = useState("");
   const [templateId, setTemplateId] = useState(USABLE_TEMPLATES[0]?.id || "aida");
   const [addressMode, setAddressMode] = useState<"du" | "sie">("du");
+  const [perspective, setPerspective] = useState<"ich" | "leser">("ich");
   const [tone, setTone] = useState("professionell");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
       formData.append("topic", topic.trim());
       formData.append("templateId", templateId);
       formData.append("addressMode", addressMode);
+      formData.append("perspective", perspective);
       formData.append("tone", tone);
       if (file) formData.append("file", file);
 
@@ -166,8 +168,22 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
             />
           </div>
 
-          {/* Anrede + Tonalitaet nebeneinander */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Perspektive + Anrede + Tonalitaet */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
+                Perspektive
+              </label>
+              <select
+                value={perspective}
+                onChange={(e) => setPerspective(e.target.value as "ich" | "leser")}
+                disabled={loading}
+                className={selectClasses}
+              >
+                <option value="ich">Ich-Perspektive</option>
+                <option value="leser">Leser ansprechen</option>
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
                 Anrede
