@@ -1,0 +1,239 @@
+"use client";
+
+import React, { useState, useCallback } from "react";
+import {
+  toBold,
+  toItalic,
+  removeBold,
+  removeItalic,
+  isSelectionBold,
+  isSelectionItalic,
+} from "@/lib/unicode";
+import EmojiPickerPopover from "./EmojiPicker";
+import AsciiPicker from "./AsciiPicker";
+
+interface ToolbarProps {
+  activeFieldRef: React.RefObject<HTMLTextAreaElement> | null;
+  activeFieldId: string | null;
+  onUpdateField: (fieldId: string, value: string) => void;
+  fields: Record<string, string>;
+}
+
+export default function Toolbar({
+  activeFieldRef,
+  activeFieldId,
+  onUpdateField,
+  fields,
+}: ToolbarProps) {
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showAscii, setShowAscii] = useState(false);
+
+  const getSelection = useCallback(() => {
+    const el = activeFieldRef?.current;
+    if (!el || !activeFieldId) return null;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const value = fields[activeFieldId] || "";
+    return { el, start, end, value, hasSelection: start !== end };
+  }, [activeFieldRef, activeFieldId, fields]);
+
+  const applyFormat = useCallback(
+    (formatter: (text: string) => string) => {
+      const sel = getSelection();
+      if (!sel || !activeFieldId) return;
+      const { el, start, end, value } = sel;
+
+      if (start === end) return;
+
+      const before = value.slice(0, start);
+      const selected = value.slice(start, end);
+      const after = value.slice(end);
+      const formatted = formatter(selected);
+      const newValue = before + formatted + after;
+
+      onUpdateField(activeFieldId, newValue);
+
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(start, start + formatted.length);
+      });
+    },
+    [getSelection, activeFieldId, onUpdateField]
+  );
+
+  const handleBold = useCallback(() => {
+    const sel = getSelection();
+    if (!sel || !sel.hasSelection) return;
+    const selected = sel.value.slice(sel.start, sel.end);
+    if (isSelectionBold(selected)) {
+      applyFormat(removeBold);
+    } else {
+      applyFormat(toBold);
+    }
+  }, [getSelection, applyFormat]);
+
+  const handleItalic = useCallback(() => {
+    const sel = getSelection();
+    if (!sel || !sel.hasSelection) return;
+    const selected = sel.value.slice(sel.start, sel.end);
+    if (isSelectionItalic(selected)) {
+      applyFormat(removeItalic);
+    } else {
+      applyFormat(toItalic);
+    }
+  }, [getSelection, applyFormat]);
+
+  const insertAtCursor = useCallback(
+    (text: string) => {
+      const el = activeFieldRef?.current;
+      if (!el || !activeFieldId) return;
+      const value = fields[activeFieldId] || "";
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const newValue = value.slice(0, start) + text + value.slice(end);
+      onUpdateField(activeFieldId, newValue);
+      const newPos = start + text.length;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(newPos, newPos);
+      });
+    },
+    [activeFieldRef, activeFieldId, onUpdateField, fields]
+  );
+
+  const handleEmojiSelect = useCallback(
+    (emoji: { native: string }) => {
+      insertAtCursor(emoji.native);
+      setShowEmoji(false);
+    },
+    [insertAtCursor]
+  );
+
+  const handleAsciiSelect = useCallback(
+    (char: string) => {
+      insertAtCursor(char);
+    },
+    [insertAtCursor]
+  );
+
+  const noField = !activeFieldId;
+
+  return (
+    <div className="relative flex items-center gap-1 px-3 py-2 bg-editor-surface border border-editor-border rounded-xl">
+      <ToolbarButton
+        onClick={handleBold}
+        disabled={noField}
+        title="Fett (Text markieren)"
+        ariaLabel="Bold"
+      >
+        <span className="font-bold text-sm">B</span>
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={handleItalic}
+        disabled={noField}
+        title="Kursiv (Text markieren)"
+        ariaLabel="Italic"
+      >
+        <span className="italic text-sm font-serif">I</span>
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-editor-border mx-1" />
+
+      <ToolbarButton
+        onClick={() => setShowEmoji(!showEmoji)}
+        disabled={noField}
+        title="Emoji einfügen"
+        ariaLabel="Emoji Picker"
+        active={showEmoji}
+      >
+        <span className="text-sm">😀</span>
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => setShowAscii(!showAscii)}
+        disabled={noField}
+        title="Sonderzeichen einfügen"
+        ariaLabel="ASCII Picker"
+        active={showAscii}
+      >
+        <span className="text-sm">✦</span>
+      </ToolbarButton>
+
+      {!noField && (
+        <span className="ml-auto text-xs text-editor-muted hidden sm:inline">
+          Text markieren, dann formatieren
+        </span>
+      )}
+      {noField && (
+        <span className="ml-auto text-xs text-editor-muted hidden sm:inline">
+          Klicke in ein Feld zum Starten
+        </span>
+      )}
+
+      {showEmoji && (
+        <div className="absolute top-full left-0 mt-2 z-50">
+          <div
+            className="fixed inset-0"
+            onClick={() => setShowEmoji(false)}
+          />
+          <div className="relative">
+            <EmojiPickerPopover onSelect={handleEmojiSelect} />
+          </div>
+        </div>
+      )}
+
+      {showAscii && (
+        <div className="absolute top-full left-0 mt-2 z-50">
+          <div
+            className="fixed inset-0"
+            onClick={() => setShowAscii(false)}
+          />
+          <div className="relative">
+            <AsciiPicker
+              onSelect={handleAsciiSelect}
+              onClose={() => setShowAscii(false)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToolbarButton({
+  onClick,
+  disabled,
+  title,
+  ariaLabel,
+  active,
+  children,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+  ariaLabel: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+      className={`
+        w-9 h-9 flex items-center justify-center rounded-lg
+        transition-all duration-150
+        ${disabled
+          ? "opacity-30 cursor-not-allowed"
+          : active
+            ? "bg-editor-accent text-white"
+            : "text-editor-text hover:bg-editor-surface-hover active:scale-95"
+        }
+      `}
+    >
+      {children}
+    </button>
+  );
+}

@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-editor-bg text-editor-text;
+    background-image: 
+      radial-gradient(ellipse at 20% 0%, rgba(108, 138, 255, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(108, 138, 255, 0.04) 0%, transparent 50%);
+  }
+
+  ::selection {
+    @apply bg-editor-accent/30 text-editor-text;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-editor-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-editor-muted;
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: animateIn 0.2s ease-out;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* emoji-mart dark theme overrides */
+em-emoji-picker {
+  --em-rgb-background: 35, 36, 64;
+  --em-rgb-input: 42, 43, 74;
+  --em-rgb-color: 232, 232, 240;
+  --border-radius: 12px;
+  --font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
