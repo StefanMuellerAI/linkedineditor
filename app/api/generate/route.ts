@@ -27,9 +27,10 @@ function checkRateLimit(ip: string): boolean {
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
   const uint8Array = new Uint8Array(buffer);
-  const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true } as Parameters<typeof pdfjsLib.getDocument>[0]);
   const doc = await loadingTask.promise;
 
   if (doc.numPages > MAX_PDF_PAGES) {
