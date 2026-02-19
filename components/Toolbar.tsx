@@ -306,7 +306,7 @@ function ToolbarButton({
         ${disabled
           ? "opacity-30 cursor-not-allowed"
           : active
-            ? "bg-editor-accent text-white"
+            ? "bg-editor-accent text-editor-accent-foreground"
             : "text-editor-text hover:bg-editor-surface-hover active:scale-95"
         }
       `}

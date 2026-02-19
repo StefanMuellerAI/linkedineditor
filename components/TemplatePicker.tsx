@@ -63,7 +63,7 @@ export default function TemplatePicker({ onSelect, hasContent }: TemplatePickerP
           flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium
           border transition-all duration-150
           ${open
-            ? "bg-editor-accent text-white border-editor-accent"
+            ? "bg-editor-accent text-editor-accent-foreground border-editor-accent"
             : "bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
           }
         `}
@@ -98,7 +98,7 @@ export default function TemplatePicker({ onSelect, hasContent }: TemplatePickerP
                   <div className="flex gap-2">
                     <button
                       onClick={confirmOverwrite}
-                      className="flex-1 px-3 py-2 bg-editor-accent text-white rounded-lg text-sm font-medium
+                      className="flex-1 px-3 py-2 bg-editor-accent text-editor-accent-foreground rounded-lg text-sm font-medium
                                  hover:bg-editor-accent-hover transition-colors"
                     >
                       Überschreiben
