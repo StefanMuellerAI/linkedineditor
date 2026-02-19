@@ -76,6 +76,43 @@ async function generateVisualWithRetry(
   throw new Error("Gemini request failed after retries.");
 }
 
+function isModelNotFoundError(err: unknown): boolean {
+  const { status, message } = getErrorDetails(err);
+  const msg = message.toLowerCase();
+  return status === 404 || (msg.includes("model") && (msg.includes("not found") || msg.includes("not_found")));
+}
+
+function getImageModelCandidates(): string[] {
+  const envModel = process.env.GEMINI_IMAGE_MODEL?.trim();
+  const fallbackModels = [
+    "gemini-2.5-flash-image-preview",
+    "gemini-2.0-flash-preview-image-generation",
+    "gemini-2.0-flash-exp-image-generation",
+  ];
+
+  return [...new Set([envModel, ...fallbackModels].filter((model): model is string => Boolean(model)))];
+}
+
+async function generateVisualWithModelFallback(ai: GoogleGenAI, prompt: string) {
+  const models = getImageModelCandidates();
+  let lastError: unknown;
+
+  for (const model of models) {
+    try {
+      const response = await generateVisualWithRetry(ai, model, prompt);
+      return { response, model };
+    } catch (err) {
+      lastError = err;
+      if (!isModelNotFoundError(err)) {
+        throw err;
+      }
+      console.warn(`Gemini image model '${model}' not found, trying next fallback model.`);
+    }
+  }
+
+  throw lastError ?? new Error("Kein gueltiges Gemini-Bildmodell verfuegbar.");
+}
+
 const TYPE_PROMPTS: Record<string, string> = {
   infographic:
     "Create a professional infographic that visually summarizes the following LinkedIn post content. Use clear sections, icons, key statistics or bullet points rendered as visual elements. The infographic should be easy to read at a glance and suitable for a LinkedIn feed.",
@@ -154,10 +191,8 @@ ${truncatedText}
 
 Generate the image now.`;
 
-    const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview";
-
     const ai = new GoogleGenAI({ apiKey });
-    const response = await generateVisualWithRetry(ai, model, prompt);
+    const { response } = await generateVisualWithModelFallback(ai, prompt);
 
     const parts = response.candidates?.[0]?.content?.parts;
     if (!parts) {
@@ -186,8 +221,13 @@ Generate the image now.`;
     if (errMsg.includes("safety") || errMsg.includes("BLOCKED")) {
       return NextResponse.json({ error: "Das Bild konnte aus Sicherheitsgruenden nicht generiert werden. Passe den Post-Text an." }, { status: 400 });
     }
-    if (errMsg.includes("model") || errMsg.includes("not_found") || errMsg.includes("404")) {
-      return NextResponse.json({ error: `Modell nicht gefunden: ${process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview"}. Bitte GEMINI_IMAGE_MODEL pruefen.` }, { status: 400 });
+    if (isModelNotFoundError(err)) {
+      return NextResponse.json(
+        {
+          error: `Kein verfuegbares Bildmodell gefunden. Gepruefte Modelle: ${getImageModelCandidates().join(", ")}. Bitte GEMINI_IMAGE_MODEL pruefen.`,
+        },
+        { status: 400 }
+      );
     }
     return NextResponse.json(
       { error: `Fehler bei der Bildgenerierung: ${errMsg}` },
