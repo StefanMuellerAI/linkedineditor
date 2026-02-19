@@ -64,6 +64,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
   const isEmpty = !hasPostContent;
   const canOpenAnalytics = hasPostContent;
   const canOpenVisualGenerator = visualEnabled && hasPostContent;
+  const disabledButtonClass = "bg-editor-surface/70 text-editor-muted/40 border-editor-border/70 cursor-not-allowed";
+  const enabledSecondaryButtonClass = "bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted";
   const percentage = Math.min((charCount / MAX_CHARS) * 100, 100);
 
   const barColor = useMemo(() => {
@@ -190,8 +192,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
           className={`px-3 py-3 rounded-xl text-sm font-medium shrink-0
                      border transition-all duration-200
                      ${!hasPostContent
-                       ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
-                       : "bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
+                       ? disabledButtonClass
+                       : enabledSecondaryButtonClass
                      }`}
         >
           <span className="flex items-center gap-1.5">
@@ -212,10 +214,10 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
             px-3 py-3 rounded-xl text-sm font-medium shrink-0
             border transition-all duration-200
             ${!canOpenAnalytics
-              ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
+              ? disabledButtonClass
               : showAnalytics
               ? "bg-editor-accent/10 text-editor-accent border-editor-accent/30"
-              : "bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
+              : enabledSecondaryButtonClass
             }
           `}
           title="Post-Analyse anzeigen"
@@ -239,8 +241,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
             px-3 py-3 rounded-xl text-sm font-medium shrink-0
             border transition-all duration-200
             ${!canOpenVisualGenerator
-              ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
-              : "bg-editor-surface text-editor-text border-editor-border hover:text-emerald-500 hover:border-emerald-500/30"
+              ? disabledButtonClass
+              : enabledSecondaryButtonClass
             }
           `}
         >
@@ -264,7 +266,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
             shrink-0
             ${
               isOverLimit || isEmpty
-                ? "bg-editor-surface text-editor-muted/40 cursor-not-allowed border border-editor-border"
+                ? "bg-editor-surface/70 text-editor-muted/40 cursor-not-allowed border border-editor-border/70"
                 : copied
                   ? "bg-green-500 text-white shadow-lg shadow-green-500/30"
                   : "bg-editor-accent text-white hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.97]"
