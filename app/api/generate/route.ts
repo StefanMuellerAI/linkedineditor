@@ -7,6 +7,7 @@ export const maxDuration = 60;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_PDF_PAGES = 20;
+const MAX_DOCUMENT_CHARS = 20_000;
 const ALLOWED_EXTENSIONS = ["txt", "md", "pdf", "docx"];
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -23,6 +24,56 @@ function checkRateLimit(ip: string): boolean {
   if (entry.count >= RATE_LIMIT) return false;
   entry.count++;
   return true;
+}
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getErrorDetails(err: unknown): { status?: number; message: string } {
+  if (typeof err === "object" && err !== null) {
+    const maybeStatus = (err as { status?: number }).status;
+    const maybeMessage = (err as { message?: string }).message;
+    return {
+      status: typeof maybeStatus === "number" ? maybeStatus : undefined,
+      message: typeof maybeMessage === "string" ? maybeMessage : String(err),
+    };
+  }
+
+  return { message: String(err) };
+}
+
+async function createAnthropicMessageWithRetry(
+  anthropic: Anthropic,
+  input: Anthropic.MessageCreateParamsNonStreaming,
+  maxAttempts = 3
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await anthropic.messages.create(input);
+    } catch (err) {
+      const { status, message } = getErrorDetails(err);
+      const isRetriable = status === 429 || status === 503 || status === 529;
+      if (!isRetriable || attempt === maxAttempts) {
+        throw err;
+      }
+
+      const backoffMs = 1200 * Math.pow(2, attempt - 1);
+      console.warn(`Anthropic retry ${attempt}/${maxAttempts} due to ${status || "unknown"}: ${message}`);
+      await sleep(backoffMs);
+    }
+  }
+
+  throw new Error("Anthropic request failed after retries.");
 }
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
@@ -68,7 +119,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+  const ip = getClientIp(request);
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { error: "Zu viele Anfragen. Bitte warte eine Minute." },
@@ -113,6 +164,9 @@ export async function POST(request: NextRequest) {
       }
 
       documentText = await extractText(file);
+      if (documentText.length > MAX_DOCUMENT_CHARS) {
+        documentText = documentText.slice(0, MAX_DOCUMENT_CHARS);
+      }
     }
 
     const systemPrompt = buildSystemPrompt(addressMode, tone, perspective);
@@ -130,7 +184,7 @@ export async function POST(request: NextRequest) {
 
     const anthropic = new Anthropic({ apiKey });
 
-    const message = await anthropic.messages.create({
+    const message = await createAnthropicMessageWithRetry(anthropic, {
       model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
       max_tokens: 2048,
       messages: [
@@ -143,8 +197,8 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
+      .filter((block: Anthropic.ContentBlock): block is Anthropic.TextBlock => block.type === "text")
+      .map((block: Anthropic.TextBlock) => block.text)
       .join("");
 
     let parsed: { hook: string; content: string; cta: string };
@@ -178,8 +232,11 @@ export async function POST(request: NextRequest) {
     if (errMsg.includes("Seiten")) {
       return NextResponse.json({ error: errMsg }, { status: 400 });
     }
-    if (errMsg.includes("Could not process") || errMsg.includes("overloaded") || errMsg.includes("529")) {
+    if (errMsg.includes("Could not process") || errMsg.includes("overloaded") || errMsg.includes("529") || errMsg.includes("503")) {
       return NextResponse.json({ error: "Die KI ist gerade ueberlastet. Bitte in 30 Sekunden erneut versuchen." }, { status: 503 });
+    }
+    if (errMsg.includes("429") || errMsg.includes("rate limit") || errMsg.includes("Rate limit")) {
+      return NextResponse.json({ error: "Rate-Limit erreicht. Bitte kurz warten und erneut versuchen." }, { status: 429 });
     }
     if (errMsg.includes("credit") || errMsg.includes("billing") || errMsg.includes("402")) {
       return NextResponse.json({ error: "Anthropic-Konto hat kein Guthaben. Bitte Billing pruefen." }, { status: 402 });
