@@ -11,6 +11,7 @@
   --editor-muted: #6B7280;
   --editor-accent: #4F6AE6;
   --editor-accent-hover: #3D56D4;
+  --editor-accent-foreground: #F8FAFF;
   --bg-gradient-1: rgba(79, 106, 230, 0.06);
   --bg-gradient-2: rgba(79, 106, 230, 0.04);
 }
@@ -24,6 +25,7 @@
   --editor-muted: #8888AA;
   --editor-accent: #6C8AFF;
   --editor-accent-hover: #8BA3FF;
+  --editor-accent-foreground: #111936;
   --bg-gradient-1: rgba(108, 138, 255, 0.06);
   --bg-gradient-2: rgba(108, 138, 255, 0.04);
 }

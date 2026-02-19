@@ -269,7 +269,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
                 ? "bg-editor-surface/70 text-editor-muted/40 cursor-not-allowed border border-editor-border/70"
                 : copied
                   ? "bg-green-500 text-white shadow-lg shadow-green-500/30"
-                  : "bg-editor-accent text-white hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.97]"
+                  : "bg-editor-accent text-editor-accent-foreground hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.97]"
             }
           `}
         >

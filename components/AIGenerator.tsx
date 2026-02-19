@@ -319,10 +319,10 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
               w-full py-3 rounded-xl font-medium text-sm transition-all duration-300
               flex items-center justify-center gap-2
               ${loading
-                ? "bg-editor-accent/75 text-white cursor-wait"
+                ? "bg-editor-accent/75 text-editor-accent-foreground cursor-wait"
                 : !topic.trim()
                   ? "bg-editor-bg text-editor-muted cursor-not-allowed border border-editor-border"
-                  : "bg-editor-accent text-white hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.98]"
+                  : "bg-editor-accent text-editor-accent-foreground hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.98]"
               }
             `}
           >

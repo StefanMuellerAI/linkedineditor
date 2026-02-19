@@ -36,7 +36,7 @@ export default function AsciiPicker({ onSelect, onClose }: AsciiPickerProps) {
               shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-sm
               transition-all duration-150
               ${i === activeCategory
-                ? "bg-editor-accent text-white"
+                ? "bg-editor-accent text-editor-accent-foreground"
                 : "text-editor-muted hover:bg-editor-surface-hover hover:text-editor-text"
               }
             `}
@@ -57,7 +57,7 @@ export default function AsciiPicker({ onSelect, onClose }: AsciiPickerProps) {
               onClick={() => onSelect(char)}
               title={`${char} einfügen`}
               className="w-8 h-8 flex items-center justify-center rounded-md text-base
-                         text-editor-text hover:bg-editor-accent hover:text-white
+                         text-editor-text hover:bg-editor-accent hover:text-editor-accent-foreground
                          transition-all duration-100 active:scale-90"
             >
               {char}

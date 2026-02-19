@@ -31,6 +31,7 @@ const config: Config = {
           muted: "var(--editor-muted)",
           accent: "var(--editor-accent)",
           "accent-hover": "var(--editor-accent-hover)",
+          "accent-foreground": "var(--editor-accent-foreground)",
         },
       },
     },
