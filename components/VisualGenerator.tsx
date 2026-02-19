@@ -169,7 +169,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
                   className={`
                     px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-150
                     ${type === t.id
-                      ? "bg-editor-accent/10 text-editor-accent border-editor-accent/30"
+                      ? "bg-editor-accent text-white border-editor-accent shadow-sm shadow-editor-accent/30"
                       : "bg-editor-bg text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
                     }
                     disabled:opacity-50
@@ -277,10 +277,10 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
               w-full py-3 rounded-xl font-medium text-sm transition-all duration-300
               flex items-center justify-center gap-2
               ${loading
-                ? "bg-emerald-500/70 text-white cursor-wait"
+                ? "bg-editor-accent/75 text-white cursor-wait"
                 : !postText.trim()
-                  ? "bg-editor-surface-hover text-editor-muted cursor-not-allowed border border-editor-border"
-                  : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 active:scale-[0.98]"
+                  ? "bg-editor-bg text-editor-muted cursor-not-allowed border border-editor-border"
+                  : "bg-editor-accent text-white hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.98]"
               }
             `}
           >
