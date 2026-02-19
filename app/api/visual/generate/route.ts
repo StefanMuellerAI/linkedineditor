@@ -19,6 +19,63 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getErrorDetails(err: unknown): { status?: number; message: string } {
+  if (typeof err === "object" && err !== null) {
+    const maybeStatus = (err as { status?: number }).status;
+    const maybeMessage = (err as { message?: string }).message;
+    return {
+      status: typeof maybeStatus === "number" ? maybeStatus : undefined,
+      message: typeof maybeMessage === "string" ? maybeMessage : String(err),
+    };
+  }
+
+  return { message: String(err) };
+}
+
+async function generateVisualWithRetry(
+  ai: GoogleGenAI,
+  model: string,
+  prompt: string,
+  maxAttempts = 3
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          responseModalities: ["image", "text"],
+        },
+      });
+    } catch (err) {
+      const { status, message } = getErrorDetails(err);
+      const isRetriable = status === 429 || status === 503;
+      if (!isRetriable || attempt === maxAttempts) {
+        throw err;
+      }
+
+      const backoffMs = 1200 * Math.pow(2, attempt - 1);
+      console.warn(`Gemini retry ${attempt}/${maxAttempts} due to ${status || "unknown"}: ${message}`);
+      await sleep(backoffMs);
+    }
+  }
+
+  throw new Error("Gemini request failed after retries.");
+}
+
 const TYPE_PROMPTS: Record<string, string> = {
   infographic:
     "Create a professional infographic that visually summarizes the following LinkedIn post content. Use clear sections, icons, key statistics or bullet points rendered as visual elements. The infographic should be easy to read at a glance and suitable for a LinkedIn feed.",
@@ -52,7 +109,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+  const ip = getClientIp(request);
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { error: "Zu viele Anfragen. Bitte warte eine Minute." },
@@ -100,13 +157,7 @@ Generate the image now.`;
     const model = process.env.GEMINI_IMAGE_MODEL || "gemini-3-pro-image-preview";
 
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        responseModalities: ["image", "text"],
-      },
-    });
+    const response = await generateVisualWithRetry(ai, model, prompt);
 
     const parts = response.candidates?.[0]?.content?.parts;
     if (!parts) {
