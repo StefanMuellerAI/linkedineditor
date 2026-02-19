@@ -191,7 +191,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
       if (event.error === "not-allowed") {
         setError("Kein Mikrofonzugriff. Bitte Browser-Berechtigung aktivieren.");
       } else if (event.error === "service-not-allowed") {
-        setError("Sprachaufnahme ist in diesem Browser nicht verfuegbar. Bitte Safari auf dem iPhone verwenden.");
+        setError("Mikrofonzugriff in Chrome blockiert. Bitte in iPhone Einstellungen > Chrome > Mikrofon aktivieren.");
       } else if (event.error === "audio-capture") {
         setError("Kein Mikrofon gefunden. Bitte pruefe dein Mikrofon.");
       } else if (event.error === "no-speech") {
@@ -208,7 +208,14 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     };
 
     speechRecognitionRef.current = recognition;
-    recognition.start();
+
+    try {
+      recognition.start();
+    } catch {
+      speechRecognitionRef.current = null;
+      setIsRecording(false);
+      setError("Sprachaufnahme konnte nicht gestartet werden. Bitte Mikrofonzugriff in Chrome erlauben und erneut versuchen.");
+    }
   };
 
   if (!open) return null;
