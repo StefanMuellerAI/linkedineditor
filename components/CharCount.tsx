@@ -163,7 +163,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
           title="Post aus .md importieren"
           className="px-3 py-3 rounded-xl text-sm font-medium shrink-0
                      border transition-all duration-200
-                     bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
+                     bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
         >
           <span className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
