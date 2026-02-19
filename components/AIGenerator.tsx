@@ -40,6 +40,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<any>(null);
+  const recordingBaseTopicRef = useRef("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -158,33 +159,29 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     recognition.interimResults = true;
     recognition.continuous = true;
 
-    let finalTranscript = "";
-
     recognition.onstart = () => {
       setError(null);
+      recordingBaseTopicRef.current = topic.trim();
       setIsRecording(true);
     };
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = "";
+      let sessionTranscript = "";
 
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      for (let i = 0; i < event.results.length; i += 1) {
         const transcriptPart = event.results[i][0]?.transcript || "";
-        if (event.results[i].isFinal) {
-          finalTranscript += transcriptPart;
-        } else {
-          interimTranscript += transcriptPart;
-        }
+        sessionTranscript += transcriptPart;
       }
 
-      const combinedTranscript = `${finalTranscript}${interimTranscript}`.trim();
-      if (!combinedTranscript) return;
+      const cleanSessionTranscript = sessionTranscript.trim();
+      const baseTopic = recordingBaseTopicRef.current;
 
-      setTopic((prev) => {
-        if (!prev.trim()) return combinedTranscript;
-        if (combinedTranscript.startsWith(prev.trim())) return combinedTranscript;
-        return `${prev.trim()} ${combinedTranscript}`.trim();
-      });
+      if (!cleanSessionTranscript) {
+        setTopic(baseTopic);
+        return;
+      }
+
+      setTopic(baseTopic ? `${baseTopic} ${cleanSessionTranscript}`.trim() : cleanSessionTranscript);
     };
 
     recognition.onerror = (event: any) => {
