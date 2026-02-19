@@ -60,7 +60,10 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
 
   const charCount = mergedText.length;
   const isOverLimit = charCount > MAX_CHARS;
-  const isEmpty = charCount === 0;
+  const hasPostContent = charCount > 0;
+  const isEmpty = !hasPostContent;
+  const canOpenAnalytics = hasPostContent;
+  const canOpenVisualGenerator = visualEnabled && hasPostContent;
   const percentage = Math.min((charCount / MAX_CHARS) * 100, 100);
 
   const barColor = useMemo(() => {
@@ -87,6 +90,12 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
       setTimeout(() => setCopied(false), 2000);
     }
   }, [mergedText, isOverLimit, isEmpty]);
+
+  React.useEffect(() => {
+    if (!canOpenAnalytics && showAnalytics) {
+      setShowAnalytics(false);
+    }
+  }, [canOpenAnalytics, showAnalytics]);
 
   const handleExport = useCallback(() => {
     const md = exportToMarkdown(hook, content, cta);
@@ -176,13 +185,13 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
         {/* Export */}
         <button
           onClick={handleExport}
-          disabled={isEmpty}
+          disabled={!hasPostContent}
           title="Post als .md exportieren"
           className={`px-3 py-3 rounded-xl text-sm font-medium shrink-0
                      border transition-all duration-200
-                     ${isEmpty
+                     ${!hasPostContent
                        ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
-                       : "bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
+                       : "bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
                      }`}
         >
           <span className="flex items-center gap-1.5">
@@ -197,13 +206,16 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
 
         {/* Analytics Toggle */}
         <button
-          onClick={() => setShowAnalytics(!showAnalytics)}
+          onClick={() => canOpenAnalytics && setShowAnalytics(!showAnalytics)}
+          disabled={!canOpenAnalytics}
           className={`
             px-3 py-3 rounded-xl text-sm font-medium shrink-0
             border transition-all duration-200
-            ${showAnalytics
+            ${!canOpenAnalytics
+              ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
+              : showAnalytics
               ? "bg-editor-accent/10 text-editor-accent border-editor-accent/30"
-              : "bg-editor-surface text-editor-muted border-editor-border hover:text-editor-text hover:border-editor-muted"
+              : "bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
             }
           `}
           title="Post-Analyse anzeigen"
@@ -221,14 +233,14 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
         {/* Visual Generator */}
         <button
           onClick={onVisualGenerate}
-          disabled={!visualEnabled || isEmpty}
+          disabled={!canOpenVisualGenerator}
           title={!visualEnabled ? "GEMINI_API_KEY nicht konfiguriert" : "Visual zum Post generieren"}
           className={`
             px-3 py-3 rounded-xl text-sm font-medium shrink-0
             border transition-all duration-200
-            ${!visualEnabled || isEmpty
+            ${!canOpenVisualGenerator
               ? "bg-editor-surface text-editor-muted/30 border-editor-border cursor-not-allowed"
-              : "bg-editor-surface text-editor-muted border-editor-border hover:text-emerald-500 hover:border-emerald-500/30"
+              : "bg-editor-surface text-editor-text border-editor-border hover:text-emerald-500 hover:border-emerald-500/30"
             }
           `}
         >
