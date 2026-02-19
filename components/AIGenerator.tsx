@@ -42,6 +42,8 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
   const speechRecognitionRef = useRef<any>(null);
   const recordingBaseTopicRef = useRef("");
 
+  const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -157,7 +159,8 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
     recognition.interimResults = true;
-    recognition.continuous = true;
+    // iOS browsers often throw recognition errors with continuous mode enabled.
+    recognition.continuous = !isIOS;
 
     recognition.onstart = () => {
       setError(null);
@@ -187,6 +190,12 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     recognition.onerror = (event: any) => {
       if (event.error === "not-allowed") {
         setError("Kein Mikrofonzugriff. Bitte Browser-Berechtigung aktivieren.");
+      } else if (event.error === "service-not-allowed") {
+        setError("Sprachaufnahme ist in diesem Browser nicht verfuegbar. Bitte Safari auf dem iPhone verwenden.");
+      } else if (event.error === "audio-capture") {
+        setError("Kein Mikrofon gefunden. Bitte pruefe dein Mikrofon.");
+      } else if (event.error === "no-speech") {
+        setError("Keine Sprache erkannt. Bitte erneut versuchen.");
       } else if (event.error !== "aborted") {
         setError("Sprachaufnahme fehlgeschlagen. Bitte erneut versuchen.");
       }
