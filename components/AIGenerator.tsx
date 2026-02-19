@@ -35,8 +35,25 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const speechRecognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setSpeechSupported(Boolean(SpeechRecognition));
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.stop();
+        speechRecognitionRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -46,6 +63,14 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, loading, onClose]);
+
+  useEffect(() => {
+    if (!open && speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+      speechRecognitionRef.current = null;
+      setIsRecording(false);
+    }
+  }, [open]);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !loading) onClose();
@@ -113,6 +138,73 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
     }
   };
 
+  const toggleRecording = () => {
+    if (!speechSupported || loading) return;
+
+    if (isRecording && speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Sprachaufnahme wird auf diesem Geraet/Browser nicht unterstuetzt.");
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "de-DE";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    let finalTranscript = "";
+
+    recognition.onstart = () => {
+      setError(null);
+      setIsRecording(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcriptPart = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) {
+          finalTranscript += transcriptPart;
+        } else {
+          interimTranscript += transcriptPart;
+        }
+      }
+
+      const combinedTranscript = `${finalTranscript}${interimTranscript}`.trim();
+      if (!combinedTranscript) return;
+
+      setTopic((prev) => {
+        if (!prev.trim()) return combinedTranscript;
+        if (combinedTranscript.startsWith(prev.trim())) return combinedTranscript;
+        return `${prev.trim()} ${combinedTranscript}`.trim();
+      });
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === "not-allowed") {
+        setError("Kein Mikrofonzugriff. Bitte Browser-Berechtigung aktivieren.");
+      } else if (event.error !== "aborted") {
+        setError("Sprachaufnahme fehlgeschlagen. Bitte erneut versuchen.");
+      }
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      speechRecognitionRef.current = null;
+    };
+
+    speechRecognitionRef.current = recognition;
+    recognition.start();
+  };
+
   if (!open) return null;
 
   return (
@@ -155,6 +247,25 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
             <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
               Thema *
             </label>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] text-editor-muted/80">Du kannst dein Thema auch einsprechen.</span>
+              <button
+                type="button"
+                onClick={toggleRecording}
+                disabled={!speechSupported || loading}
+                className={`
+                  inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors
+                  ${isRecording
+                    ? "border-red-400/60 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                    : "border-editor-border bg-editor-bg text-editor-text hover:bg-editor-surface-hover"
+                  }
+                  ${(!speechSupported || loading) ? "cursor-not-allowed opacity-50" : ""}
+                `}
+              >
+                <span className={`h-2 w-2 rounded-full ${isRecording ? "bg-red-400 animate-pulse" : "bg-editor-muted"}`} />
+                {isRecording ? "Aufnahme stoppen" : "Thema einsprechen"}
+              </button>
+            </div>
             <textarea
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
