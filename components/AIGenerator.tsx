@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { TEMPLATES } from "@/lib/templates";
-import { TONE_OPTIONS } from "@/lib/prompts";
+import { HOOK_TYPE_OPTIONS, TONE_OPTIONS } from "@/lib/prompts";
 
 interface AIGeneratorProps {
   open: boolean;
@@ -31,6 +31,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
   const [addressMode, setAddressMode] = useState<"du" | "sie">("du");
   const [perspective, setPerspective] = useState<"ich" | "leser">("ich");
   const [tone, setTone] = useState("professionell");
+  const [hookType, setHookType] = useState("auto");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +121,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
       formData.append("addressMode", addressMode);
       formData.append("perspective", perspective);
       formData.append("tone", tone);
+      formData.append("hookType", hookType);
       if (file) formData.append("file", file);
 
       const res = await fetch("/api/generate", { method: "POST", body: formData });
@@ -402,22 +404,42 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
           </div>
 
           {/* Template Selection */}
-          <div>
-            <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
-              Vorlage
-            </label>
-            <select
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              disabled={loading}
-              className={selectClasses}
-            >
-              {USABLE_TEMPLATES.map((tpl) => (
-                <option key={tpl.id} value={tpl.id}>
-                  {tpl.icon} {tpl.name} — {tpl.description}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
+                Vorlage
+              </label>
+              <select
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                disabled={loading}
+                className={selectClasses}
+              >
+                {USABLE_TEMPLATES.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.icon} {tpl.name} — {tpl.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
+                Hook-Typ
+              </label>
+              <select
+                value={hookType}
+                onChange={(e) => setHookType(e.target.value)}
+                disabled={loading}
+                className={selectClasses}
+              >
+                {HOOK_TYPE_OPTIONS.map((hookOption) => (
+                  <option key={hookOption.id} value={hookOption.id}>
+                    {hookOption.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Error */}

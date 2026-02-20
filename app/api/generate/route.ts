@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { TEMPLATES } from "@/lib/templates";
-import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
+import { HOOK_TYPE_OPTIONS, buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 
 export const maxDuration = 60;
 
@@ -9,6 +9,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_PDF_PAGES = 20;
 const MAX_DOCUMENT_CHARS = 20_000;
 const ALLOWED_EXTENSIONS = ["txt", "md", "pdf", "docx"];
+const ALLOWED_HOOK_TYPES = new Set(HOOK_TYPE_OPTIONS.map((option) => option.id));
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
@@ -134,6 +135,11 @@ export async function POST(request: NextRequest) {
     const addressMode = (formData.get("addressMode") as "du" | "sie" | null) || "du";
     const perspective = (formData.get("perspective") as "ich" | "leser" | null) || "ich";
     const tone = (formData.get("tone") as string | null) || "professionell";
+    const hookType = (formData.get("hookType") as string | null) || "auto";
+
+    if (!ALLOWED_HOOK_TYPES.has(hookType)) {
+      return NextResponse.json({ error: "Ungueltiger Hook-Typ." }, { status: 400 });
+    }
     const file = formData.get("file") as File | null;
 
     if (!topic || topic.trim().length === 0) {
@@ -180,6 +186,7 @@ export async function POST(request: NextRequest) {
       documentText,
       addressMode,
       tone,
+      hookType,
     });
 
     const anthropic = new Anthropic({ apiKey });
