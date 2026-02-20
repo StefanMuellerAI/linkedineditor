@@ -142,7 +142,8 @@ export default function Toolbar({
   const noField = !activeFieldId;
 
   return (
-    <div className="relative flex items-center gap-1 px-3 py-2 bg-editor-surface border border-editor-border rounded-xl">
+    <div className="relative px-2 sm:px-3 py-2 bg-editor-surface border border-editor-border rounded-xl space-y-2">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
       <TemplatePicker onSelect={onTemplateSelect} hasContent={hasContent} />
 
       <div className="w-px h-5 bg-editor-border mx-1" />
@@ -238,13 +239,15 @@ export default function Toolbar({
         </svg>
       </ToolbarButton>
 
+      </div>
+
       {!noField && (
-        <span className="ml-auto text-xs text-editor-muted hidden sm:inline">
+        <span className="text-xs text-editor-muted block">
           Text markieren, dann formatieren
         </span>
       )}
       {noField && (
-        <span className="ml-auto text-xs text-editor-muted hidden sm:inline">
+        <span className="text-xs text-editor-muted block">
           Klicke in ein Feld zum Starten
         </span>
       )}

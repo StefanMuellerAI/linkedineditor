@@ -44,7 +44,7 @@ export default function TextField({
 
   return (
     <div className="group relative">
-      <div className="flex items-baseline justify-between mb-2">
+      <div className="flex items-baseline justify-between mb-2 gap-2">
         <label className="text-sm font-medium text-editor-text tracking-wide uppercase">
           {label}
         </label>
@@ -64,8 +64,8 @@ export default function TextField({
         placeholder={placeholder}
         rows={minRows}
         spellCheck={false}
-        className="w-full bg-editor-surface border border-editor-border rounded-lg px-4 py-3 
-                   text-editor-text text-[15px] leading-6 resize-none outline-none
+        className="w-full bg-editor-surface border border-editor-border rounded-lg px-4 py-3.5
+                   text-editor-text text-base leading-6 resize-none outline-none
                    transition-all duration-200
                    placeholder:text-editor-muted/50
                    focus:border-editor-accent focus:ring-1 focus:ring-editor-accent/30

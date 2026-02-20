@@ -112,12 +112,12 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4"
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-2xl shadow-2xl shadow-black/40 animate-in overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-black/40 animate-in overflow-hidden h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
@@ -160,7 +160,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
             <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
               Typ
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {TYPES.map((t) => (
                 <button
                   key={t.id}
@@ -201,7 +201,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
           </div>
 
           {/* Stil + Ratio nebeneinander */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
                 Stil

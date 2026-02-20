@@ -159,23 +159,24 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
           </div>
         </div>
 
-        {/* Import */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          title="Post aus .md importieren"
-          className="px-3 py-3 rounded-xl text-sm font-medium shrink-0
-                     border transition-all duration-200
-                     bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
-        >
-          <span className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            <span className="hidden sm:inline">Import</span>
-          </span>
-        </button>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          {/* Import */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Post aus .md importieren"
+            className="px-3 py-3 rounded-xl text-sm font-medium shrink-0
+                       border transition-all duration-200
+                       bg-editor-surface text-editor-text border-editor-border hover:border-editor-muted"
+          >
+            <span className="flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span>Import</span>
+            </span>
+          </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -184,8 +185,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
           className="hidden"
         />
 
-        {/* Export */}
-        <button
+          {/* Export */}
+          <button
           onClick={handleExport}
           disabled={!hasPostContent}
           title="Post als .md exportieren"
@@ -202,12 +203,12 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span className="hidden sm:inline">Export</span>
+            <span>Export</span>
           </span>
         </button>
 
-        {/* Analytics Toggle */}
-        <button
+          {/* Analytics Toggle */}
+          <button
           onClick={() => canOpenAnalytics && setShowAnalytics(!showAnalytics)}
           disabled={!canOpenAnalytics}
           className={`
@@ -228,12 +229,12 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               <line x1="12" y1="20" x2="12" y2="4" />
               <line x1="6" y1="20" x2="6" y2="14" />
             </svg>
-            <span className="hidden sm:inline">Analyse</span>
+            <span>Analyse</span>
           </span>
         </button>
 
-        {/* Visual Generator */}
-        <button
+          {/* Visual Generator */}
+          <button
           onClick={onVisualGenerate}
           disabled={!canOpenVisualGenerator}
           title={!visualEnabled ? "GEMINI_API_KEY nicht konfiguriert" : "Visual zum Post generieren"}
@@ -252,12 +253,12 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
             </svg>
-            <span className="hidden sm:inline">Visual</span>
+            <span>Visual</span>
           </span>
         </button>
 
-        {/* Copy Button */}
-        <button
+          {/* Copy Button */}
+          <button
           onClick={handleCopy}
           disabled={isOverLimit || isEmpty}
           className={`
@@ -291,7 +292,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               </>
             )}
           </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Analytics Panel */}
