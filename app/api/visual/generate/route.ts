@@ -34,8 +34,11 @@ function sleep(ms: number): Promise<void> {
 
 function getErrorDetails(err: unknown): { status?: number; message: string } {
   if (typeof err === "object" && err !== null) {
-    const maybeStatus = (err as { status?: number }).status;
-    const maybeMessage = (err as { message?: string }).message;
+    const maybeStatus = (err as { status?: number; statusCode?: number; code?: number }).status
+      ?? (err as { statusCode?: number }).statusCode
+      ?? (err as { code?: number }).code;
+    const maybeMessage = (err as { message?: string; error?: { message?: string } }).message
+      ?? (err as { error?: { message?: string } }).error?.message;
     return {
       status: typeof maybeStatus === "number" ? maybeStatus : undefined,
       message: typeof maybeMessage === "string" ? maybeMessage : String(err),
@@ -43,6 +46,10 @@ function getErrorDetails(err: unknown): { status?: number; message: string } {
   }
 
   return { message: String(err) };
+}
+
+function isStatusMentioned(message: string, statuses: number[]): boolean {
+  return statuses.some((status) => message.includes(String(status)));
 }
 
 async function generateVisualWithRetry(
@@ -62,7 +69,15 @@ async function generateVisualWithRetry(
       });
     } catch (err) {
       const { status, message } = getErrorDetails(err);
-      const isRetriable = status === 429 || status === 503;
+      const lowerMessage = message.toLowerCase();
+      const isRetriable =
+        status === 429 ||
+        status === 500 ||
+        status === 503 ||
+        lowerMessage.includes("rate limit") ||
+        lowerMessage.includes("overloaded") ||
+        lowerMessage.includes("temporar") ||
+        isStatusMentioned(lowerMessage, [429, 500, 503]);
       if (!isRetriable || attempt === maxAttempts) {
         throw err;
       }
@@ -79,7 +94,7 @@ async function generateVisualWithRetry(
 function isModelNotFoundError(err: unknown): boolean {
   const { status, message } = getErrorDetails(err);
   const msg = message.toLowerCase();
-  return status === 404 || (msg.includes("model") && (msg.includes("not found") || msg.includes("not_found")));
+  return status === 404 || (msg.includes("model") && (msg.includes("not found") || msg.includes("not_found") || msg.includes("unsupported")));
 }
 
 function getImageModelCandidates(): string[] {
@@ -210,16 +225,21 @@ Generate the image now.`;
     return NextResponse.json({ error: "Gemini hat kein Bild generiert. Bitte versuche es erneut." }, { status: 502 });
   } catch (err) {
     console.error("Visual generate error:", err);
-    const errMsg = err instanceof Error ? err.message : String(err);
+    const { status, message } = getErrorDetails(err);
+    const errMsg = message;
+    const lowerMsg = errMsg.toLowerCase();
 
-    if (errMsg.includes("authentication") || errMsg.includes("API_KEY") || errMsg.includes("401")) {
+    if (status === 401 || lowerMsg.includes("authentication") || lowerMsg.includes("api_key") || isStatusMentioned(lowerMsg, [401])) {
       return NextResponse.json({ error: "GEMINI_API_KEY ist ungueltig." }, { status: 401 });
     }
-    if (errMsg.includes("quota") || errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
+    if (status === 429 || lowerMsg.includes("quota") || lowerMsg.includes("rate_limit") || lowerMsg.includes("rate limit") || isStatusMentioned(lowerMsg, [429])) {
       return NextResponse.json({ error: "Gemini Rate-Limit erreicht. Bitte warte und versuche es erneut." }, { status: 429 });
     }
-    if (errMsg.includes("safety") || errMsg.includes("BLOCKED")) {
+    if (status === 400 && (lowerMsg.includes("safety") || lowerMsg.includes("blocked"))) {
       return NextResponse.json({ error: "Das Bild konnte aus Sicherheitsgruenden nicht generiert werden. Passe den Post-Text an." }, { status: 400 });
+    }
+    if (status === 500 || status === 503 || lowerMsg.includes("overloaded") || lowerMsg.includes("temporar") || isStatusMentioned(lowerMsg, [500, 503])) {
+      return NextResponse.json({ error: "Gemini ist aktuell ueberlastet. Bitte versuche es in 30 Sekunden erneut." }, { status: 503 });
     }
     if (isModelNotFoundError(err)) {
       return NextResponse.json(

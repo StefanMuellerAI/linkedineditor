@@ -41,8 +41,11 @@ function sleep(ms: number): Promise<void> {
 
 function getErrorDetails(err: unknown): { status?: number; message: string } {
   if (typeof err === "object" && err !== null) {
-    const maybeStatus = (err as { status?: number }).status;
-    const maybeMessage = (err as { message?: string }).message;
+    const maybeStatus = (err as { status?: number; statusCode?: number; code?: number }).status
+      ?? (err as { statusCode?: number }).statusCode
+      ?? (err as { code?: number }).code;
+    const maybeMessage = (err as { message?: string; error?: { message?: string } }).message
+      ?? (err as { error?: { message?: string } }).error?.message;
     return {
       status: typeof maybeStatus === "number" ? maybeStatus : undefined,
       message: typeof maybeMessage === "string" ? maybeMessage : String(err),
@@ -50,6 +53,10 @@ function getErrorDetails(err: unknown): { status?: number; message: string } {
   }
 
   return { message: String(err) };
+}
+
+function isStatusMentioned(message: string, statuses: number[]): boolean {
+  return statuses.some((status) => message.includes(String(status)));
 }
 
 async function createAnthropicMessageWithRetry(
@@ -62,7 +69,15 @@ async function createAnthropicMessageWithRetry(
       return await anthropic.messages.create(input);
     } catch (err) {
       const { status, message } = getErrorDetails(err);
-      const isRetriable = status === 429 || status === 503 || status === 529;
+      const lowerMessage = message.toLowerCase();
+      const isRetriable =
+        status === 429 ||
+        status === 503 ||
+        status === 529 ||
+        lowerMessage.includes("rate limit") ||
+        lowerMessage.includes("overloaded") ||
+        lowerMessage.includes("temporar") ||
+        isStatusMentioned(lowerMessage, [429, 503, 529]);
       if (!isRetriable || attempt === maxAttempts) {
         throw err;
       }
@@ -224,24 +239,33 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("Generate API error:", err);
-    const errMsg = err instanceof Error ? err.message : String(err);
+    const { status, message } = getErrorDetails(err);
+    const errMsg = message;
+    const lowerMsg = errMsg.toLowerCase();
 
-    if (errMsg.includes("authentication") || errMsg.includes("api_key") || errMsg.includes("401")) {
+    if (status === 401 || lowerMsg.includes("authentication") || lowerMsg.includes("api_key") || isStatusMentioned(lowerMsg, [401])) {
       return NextResponse.json({ error: "API-Key ist ungueltig oder fehlt. Bitte ANTHROPIC_API_KEY in Vercel pruefen." }, { status: 401 });
     }
     if (errMsg.includes("Seiten")) {
       return NextResponse.json({ error: errMsg }, { status: 400 });
     }
-    if (errMsg.includes("Could not process") || errMsg.includes("overloaded") || errMsg.includes("529") || errMsg.includes("503")) {
+    if (
+      status === 503 ||
+      status === 529 ||
+      lowerMsg.includes("could not process") ||
+      lowerMsg.includes("overloaded") ||
+      lowerMsg.includes("temporar") ||
+      isStatusMentioned(lowerMsg, [503, 529])
+    ) {
       return NextResponse.json({ error: "Die KI ist gerade ueberlastet. Bitte in 30 Sekunden erneut versuchen." }, { status: 503 });
     }
-    if (errMsg.includes("429") || errMsg.includes("rate limit") || errMsg.includes("Rate limit")) {
+    if (status === 429 || lowerMsg.includes("rate limit") || isStatusMentioned(lowerMsg, [429])) {
       return NextResponse.json({ error: "Rate-Limit erreicht. Bitte kurz warten und erneut versuchen." }, { status: 429 });
     }
-    if (errMsg.includes("credit") || errMsg.includes("billing") || errMsg.includes("402")) {
+    if (status === 402 || lowerMsg.includes("credit") || lowerMsg.includes("billing") || isStatusMentioned(lowerMsg, [402])) {
       return NextResponse.json({ error: "Anthropic-Konto hat kein Guthaben. Bitte Billing pruefen." }, { status: 402 });
     }
-    if (errMsg.includes("model") || errMsg.includes("not_found")) {
+    if (status === 404 || (lowerMsg.includes("model") && (lowerMsg.includes("not found") || lowerMsg.includes("not_found")))) {
       return NextResponse.json({ error: `Modell nicht gefunden: ${process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514"}. Bitte ANTHROPIC_MODEL in Vercel pruefen.` }, { status: 400 });
     }
     return NextResponse.json(
