@@ -8,6 +8,7 @@ export interface PromptInput {
   documentText?: string;
   addressMode?: "du" | "sie";
   tone?: string;
+  hookType?: string;
 }
 
 const TEMPLATE_INSTRUCTIONS: Record<string, string> = {
@@ -47,6 +48,16 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
     "Schreibe wie eine anerkannte Autoritaet auf deinem Gebiet. Teile einzigartige Perspektiven und Frameworks. Ordne aktuelle Entwicklungen ein. Zeige tiefes Verstaendnis und biete neue Denkansaetze.",
 };
 
+const HOOK_TYPE_INSTRUCTIONS: Record<string, string> = {
+  auto: "Waehle den Hook-Typ frei passend zum Thema und zur Vorlage.",
+  frage: "Starte den Hook mit einer starken Frage, die sofort Relevanz ausloest.",
+  statistik: "Beginne mit einer konkreten Zahl oder Statistik, die Aufmerksamkeit erzeugt.",
+  kontraer: "Beginne mit einer kontraeren oder unerwarteten Aussage gegen den Mainstream.",
+  story: "Starte mitten in einer kurzen Szene oder Situation, sodass Neugier entsteht.",
+  problem: "Eroeffne mit einem klaren Problem oder Schmerzpunkt der Zielgruppe.",
+  promise: "Beginne mit einem klaren Ergebnisversprechen (z. B. Zeit sparen, Umsatz steigern).",
+};
+
 export const TONE_OPTIONS = [
   { id: "professionell", label: "Professionell" },
   { id: "inspirierend", label: "Inspirierend" },
@@ -60,6 +71,16 @@ export const TONE_OPTIONS = [
   { id: "direkt", label: "Direkt / No-Bullshit" },
   { id: "motivierend", label: "Motivierend / Coach" },
   { id: "thoughtleader", label: "Thought Leader" },
+];
+
+export const HOOK_TYPE_OPTIONS = [
+  { id: "auto", label: "Automatisch (KI entscheidet)" },
+  { id: "frage", label: "Frage-Hook" },
+  { id: "statistik", label: "Statistik / Zahl" },
+  { id: "kontraer", label: "Kontraere These" },
+  { id: "story", label: "Story-Einstieg" },
+  { id: "problem", label: "Problem-Hook" },
+  { id: "promise", label: "Ergebnisversprechen" },
 ];
 
 export function buildSystemPrompt(addressMode: "du" | "sie" = "du", tone: string = "professionell", perspective: "ich" | "leser" = "ich"): string {
@@ -103,7 +124,7 @@ Kein Markdown, kein Codeblock, nur das reine JSON.`;
 }
 
 export function buildUserPrompt(input: PromptInput): string {
-  const { templateName, templateDescription, templateHook, templateContent, templateCta, topic, documentText } = input;
+  const { templateName, templateDescription, templateHook, templateContent, templateCta, topic, documentText, hookType = "auto" } = input;
 
   const templateInstruction = TEMPLATE_INSTRUCTIONS[templateName.toLowerCase()] || TEMPLATE_INSTRUCTIONS[Object.keys(TEMPLATE_INSTRUCTIONS).find(k =>
     templateName.toLowerCase().includes(k)
@@ -120,6 +141,9 @@ STRUKTUR-REFERENZ:
 - CTA-Muster: ${templateCta || "(frei gestalten)"}
 
 Fulle die Vorlage mit konkretem, spezifischem Inhalt zum Thema. Ersetze alle Platzhalter durch echten Text. Behalte die Struktur der Vorlage bei, aber schreibe komplett eigene Formulierungen.`;
+
+  const hookTypeInstruction = HOOK_TYPE_INSTRUCTIONS[hookType] || HOOK_TYPE_INSTRUCTIONS.auto;
+  prompt += `\n\nHOOK-TYP:\n${hookTypeInstruction}`;
 
   if (documentText && documentText.trim().length > 0) {
     const truncated = documentText.length > 8000 ? documentText.slice(0, 8000) + "\n\n[... Dokument gekuerzt ...]" : documentText;
