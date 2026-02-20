@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { analyzePost, PostAnalytics as AnalyticsResult } from "@/lib/analytics";
+import { analyzePost } from "@/lib/analytics";
 
 interface PostAnalyticsProps {
   hook: string;
   content: string;
   cta: string;
+  onApplySuggestion?: (suggestion: string) => Promise<void>;
+  optimizeLoading?: boolean;
+  optimizeError?: string | null;
 }
 
 function scoreColor(score: number): string {
@@ -45,7 +48,14 @@ function HookDetail({ label, active }: { label: string; active: boolean }) {
   );
 }
 
-export default function PostAnalytics({ hook, content, cta }: PostAnalyticsProps) {
+export default function PostAnalytics({
+  hook,
+  content,
+  cta,
+  onApplySuggestion,
+  optimizeLoading = false,
+  optimizeError = null,
+}: PostAnalyticsProps) {
   const analytics = useMemo(() => analyzePost(hook, content, cta), [hook, content, cta]);
 
   if (analytics.wordCount === 0) {
@@ -161,11 +171,30 @@ export default function PostAnalytics({ hook, content, cta }: PostAnalyticsProps
       {analytics.suggestions.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs font-medium text-editor-muted uppercase tracking-wider">KI-Empfehlungen</div>
+          {optimizeError && (
+            <p className="text-xs text-editor-danger bg-editor-danger-soft rounded-lg px-3 py-2">
+              {optimizeError}
+            </p>
+          )}
           <ul className="space-y-1.5">
             {analytics.suggestions.map((suggestion, index) => (
               <li key={`${index}-${suggestion}`} className="text-xs text-editor-text bg-editor-surface-hover/60 rounded-lg px-3 py-2">
-                <span className="text-editor-success mr-1.5">→</span>
-                {suggestion}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <span className="text-editor-success mr-1.5">→</span>
+                    {suggestion}
+                  </div>
+                  {onApplySuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => onApplySuggestion(suggestion)}
+                      disabled={optimizeLoading}
+                      className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md border border-editor-border bg-editor-bg px-2.5 py-1.5 text-[11px] font-medium text-editor-text transition-colors hover:bg-editor-surface disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {optimizeLoading ? "Wird angewendet..." : "Mit KI anwenden"}
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
