@@ -12,6 +12,7 @@ interface VisualGeneratorProps {
 const TYPES = [
   { id: "infographic", label: "Infografik" },
   { id: "comic", label: "Comic" },
+  { id: "meme", label: "Meme" },
 ];
 
 const STYLES = [
@@ -131,7 +132,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
             </div>
             <div>
               <h2 className="text-base font-semibold text-editor-text">Visual generieren</h2>
-              <p className="text-xs text-editor-muted">Infografik oder Comic zum Post</p>
+              <p className="text-xs text-editor-muted">Infografik, Comic oder Meme zum Post</p>
             </div>
           </div>
           <button
@@ -160,7 +161,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
             <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
               Typ
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {TYPES.map((t) => (
                 <button
                   key={t.id}
@@ -184,13 +185,23 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
                       </svg>
                       {t.label}
                     </span>
-                  ) : (
+                  ) : t.id === "comic" ? (
                     <span className="flex items-center justify-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="7" height="7" />
                         <rect x="14" y="3" width="7" height="7" />
                         <rect x="3" y="14" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
+                      </svg>
+                      {t.label}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="9" cy="10" r="1" />
+                        <circle cx="15" cy="10" r="1" />
+                        <path d="M8 15c1.2 1.2 2.4 1.8 4 1.8s2.8-.6 4-1.8" />
                       </svg>
                       {t.label}
                     </span>
