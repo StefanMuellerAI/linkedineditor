@@ -60,6 +60,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
   const [prediction, setPrediction] = useState<ImpressionPrediction | null>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [predictionError, setPredictionError] = useState<string | null>(null);
+  const [optimizeLoading, setOptimizeLoading] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mergedText = useMemo(() => {
@@ -206,6 +208,38 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
       setIsGeneratingTeleprompter(false);
     }
   }, [hasPostContent, isGeneratingTeleprompter, mergedText]);
+
+  const handleApplySuggestion = useCallback(async (suggestion: string) => {
+    if (!onImport || optimizeLoading) return;
+
+    setOptimizeLoading(true);
+    setOptimizeError(null);
+
+    try {
+      const response = await fetch("/api/analytics/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hook, content, cta, suggestion }),
+      });
+
+      const data = await response.json() as {
+        hook?: string;
+        content?: string;
+        cta?: string;
+        error?: string;
+      };
+
+      if (!response.ok || typeof data.hook !== "string" || typeof data.content !== "string" || typeof data.cta !== "string") {
+        throw new Error(data.error || "Die KI-Optimierung konnte nicht angewendet werden.");
+      }
+
+      onImport({ hook: data.hook, content: data.content, cta: data.cta });
+    } catch (error) {
+      setOptimizeError(error instanceof Error ? error.message : "Die KI-Optimierung konnte nicht angewendet werden.");
+    } finally {
+      setOptimizeLoading(false);
+    }
+  }, [content, cta, hook, onImport, optimizeLoading]);
 
   const handleImportFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -429,7 +463,14 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               </div>
 
               <div className="bg-editor-bg border border-editor-border rounded-xl p-4">
-                <PostAnalytics hook={hook} content={content} cta={cta} />
+                <PostAnalytics
+                  hook={hook}
+                  content={content}
+                  cta={cta}
+                  onApplySuggestion={onImport ? handleApplySuggestion : undefined}
+                  optimizeLoading={optimizeLoading}
+                  optimizeError={optimizeError}
+                />
               </div>
             </div>
           </div>
