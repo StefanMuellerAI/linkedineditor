@@ -10,19 +10,19 @@ interface PostAnalyticsProps {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 75) return "text-green-500";
-  if (score >= 50) return "text-yellow-500";
-  return "text-red-400";
+  if (score >= 75) return "text-editor-success";
+  if (score >= 50) return "text-editor-warning";
+  return "text-editor-danger";
 }
 
 function scoreBg(score: number): string {
-  if (score >= 75) return "bg-green-500";
-  if (score >= 50) return "bg-yellow-500";
-  return "bg-red-400";
+  if (score >= 75) return "bg-editor-success";
+  if (score >= 50) return "bg-editor-warning";
+  return "bg-editor-danger";
 }
 
 function MetricCard({ label, value, sub, quality }: { label: string; value: string; sub?: string; quality: "good" | "ok" | "bad" }) {
-  const dotColor = quality === "good" ? "bg-green-500" : quality === "ok" ? "bg-yellow-500" : "bg-red-400";
+  const dotColor = quality === "good" ? "bg-editor-success" : quality === "ok" ? "bg-editor-warning" : "bg-editor-danger";
   return (
     <div className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-editor-surface-hover/50">
       <div className={`w-2 h-2 rounded-full ${dotColor} mt-1.5 shrink-0`} />
@@ -38,7 +38,7 @@ function MetricCard({ label, value, sub, quality }: { label: string; value: stri
 function HookDetail({ label, active }: { label: string; active: boolean }) {
   return (
     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-      active ? "bg-green-500/15 text-green-500" : "bg-editor-surface-hover text-editor-muted"
+      active ? "bg-editor-success/20 text-editor-success" : "bg-editor-surface-hover text-editor-muted"
     }`}>
       {active ? "✓" : "–"} {label}
     </span>

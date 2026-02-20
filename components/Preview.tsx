@@ -45,7 +45,7 @@ export default function Preview({ hook, content, cta, visualUrl, onRemoveVisual 
         {/* Header */}
         <div className="p-4 pb-0">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-linkedin-blue to-blue-400 flex items-center justify-center text-white font-bold text-lg shrink-0">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-linkedin-blue to-linkedin-blue-hover flex items-center justify-center text-white font-bold text-lg shrink-0">
               U
             </div>
             <div className="flex-1 min-w-0">
@@ -109,7 +109,7 @@ export default function Preview({ hook, content, cta, visualUrl, onRemoveVisual 
               <a
                 href={visualUrl}
                 download={`linkedin-visual-${Date.now()}.png`}
-                className="w-7 h-7 flex items-center justify-center rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-md bg-editor-overlay text-editor-accent-foreground hover:bg-editor-overlay/90 transition-colors"
                 title="Herunterladen"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -121,7 +121,7 @@ export default function Preview({ hook, content, cta, visualUrl, onRemoveVisual 
               {onRemoveVisual && (
                 <button
                   onClick={onRemoveVisual}
-                  className="w-7 h-7 flex items-center justify-center rounded-md bg-black/60 text-white hover:bg-red-500/80 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-md bg-editor-overlay text-editor-accent-foreground hover:bg-editor-danger/80 transition-colors"
                   title="Bild entfernen"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
