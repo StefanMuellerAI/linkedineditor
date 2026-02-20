@@ -118,6 +118,8 @@ const TYPE_PROMPTS: Record<string, string> = {
     "Create a professional infographic that visually summarizes the following LinkedIn post content. Use clear sections, icons, key statistics or bullet points rendered as visual elements. The infographic should be easy to read at a glance and suitable for a LinkedIn feed.",
   comic:
     "Create a comic strip or illustrated visual story that captures the essence of the following LinkedIn post content. Use 2-4 panels with characters, speech bubbles or captions. Make it engaging, memorable and suitable for a professional LinkedIn audience.",
+  meme:
+    "Create a meme concept that fits the following LinkedIn post content. Use a relatable professional scenario, expressive characters or visual metaphor, and a witty short punchline. Keep it brand-safe, suitable for LinkedIn, and focused on one clear joke angle.",
 };
 
 const STYLE_PROMPTS: Record<string, string> = {
