@@ -3,23 +3,23 @@
 ## Kontext
 - Datum: 2026-02-20
 - Ziel: Erste Performance-Prüfung der App und Umsetzung schneller Optimierungen mit hohem Impact.
-- Hinweis: Ein vollständiges Lighthouse-Lab-Profiling (Production Build) war in dieser Umgebung nicht möglich, weil `next build` beim Abruf von Google Fonts fehlschlägt.
+- Hinweis: Der ursprüngliche Blocker (`next/font/google`-Fetch) wurde in diesem Schritt behoben; ein vollständiges Lighthouse-Lab-Profiling ist jetzt als nächster Schritt möglich.
 
 ## Durchgeführte Checks
 1. TypeScript-Check: `npx tsc --noEmit` ✅
-2. Production-Build-Check: `npm run build` ❌ (Fonts konnten nicht von `fonts.googleapis.com` geladen werden)
+2. Production-Build-Check: `npm run build` ✅
 
 ## Wichtigste Findings
 
-### 1) Externe Google-Fonts blockieren verlässliche Build-/Perf-Messungen
-Die App lädt `DM Sans` und `Instrument Serif` via `next/font/google`. In dieser Umgebung führt das zu Build-Abbrüchen.
+### 1) Externe Google-Fonts blockierten verlässliche Build-/Perf-Messungen
+Die App lud `DM Sans` und `Instrument Serif` via `next/font/google`. In dieser Umgebung führte das zu Build-Abbrüchen.
 
 **Impact**
 - Keine reproduzierbaren Production-Builds in eingeschränkten Netzwerken.
 - Potenziell zusätzlicher externer Request-Pfad für kritische Rendering-Ressourcen.
 
-**Empfehlung**
-- Fonts self-hosten (z. B. `next/font/local`) oder ein robustes Fallback-Konzept definieren.
+**Status**
+- Erledigt: Google-Font-Abhängigkeit entfernt und robuste lokale Fallback-Font-Variablen gesetzt.
 
 ### 2) Große optionale UI-Features wurden initial mitgeladen
 Die Modale für KI-/Visual-Generierung wurden direkt importiert, obwohl sie nur bei Bedarf geöffnet werden.
@@ -50,7 +50,7 @@ Das `fields`-Objekt wurde pro Render neu erzeugt.
 - Weniger unnötige Re-Renders in abhängigen Komponenten.
 
 ## Nächste Schritte (für vollständiges Audit)
-1. Fonts lokalisieren/fixen, damit `next build` stabil läuft.
+1. ✅ Fonts-Fallback umgesetzt: Abhängigkeit von `next/font/google` entfernt, damit `next build` auch ohne Google-Font-Fetches stabil läuft.
 2. Danach Lighthouse (mind. 3 Läufe, Mobile + Desktop) ausführen.
 3. Web-Vitals-Budgets definieren:
    - LCP < 2.5s
@@ -63,3 +63,4 @@ Das `fields`-Objekt wurde pro Render neu erzeugt.
 - Lazy Loading für KI-/Visual-Modal in `Editor`.
 - Lazy Loading für Emoji-/ASCII-Picker in `Toolbar`.
 - `fields`-Objekt im `Editor` memoized.
+- Wechsel von Google-Fonts auf lokale Fallback-Font-Variablen in `layout`/`globals.css`, um Build-Stabilität in eingeschränkten Netzwerken sicherzustellen.
