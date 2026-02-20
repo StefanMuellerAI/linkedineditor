@@ -15,6 +15,7 @@ export interface PostAnalytics {
   avgParagraphLines: number;
   hookScore: HookScore;
   overallScore: number;
+  suggestions: string[];
 }
 
 const POWER_WORDS = [
@@ -69,6 +70,61 @@ function analyzeHook(hook: string): HookScore {
   return { score, hasQuestion, hasNumber, hasPowerWord, isShort };
 }
 
+function buildSuggestions(
+  wordCount: number,
+  avgSentenceLength: number,
+  avgParagraphLines: number,
+  emojiCount: number,
+  hookScore: HookScore,
+  cta: string,
+): string[] {
+  const suggestions: string[] = [];
+
+  if (hookScore.score < 75) {
+    if (!hookScore.hasQuestion) {
+      suggestions.push("Starte mit einer klaren Frage im Hook, um mehr Kommentare auszulösen.");
+    }
+    if (!hookScore.hasNumber) {
+      suggestions.push("Füge eine konkrete Zahl in den Hook ein (z. B. \"3 Learnings\"), damit der Mehrwert sofort sichtbar ist.");
+    }
+    if (!hookScore.hasPowerWord) {
+      suggestions.push("Nutze ein starkes Power-Word wie \"Fehler\", \"Strategie\" oder \"Wahrheit\", um Neugier zu erzeugen.");
+    }
+  }
+
+  if (wordCount < 100) {
+    suggestions.push("Erweitere den Post um ein kurzes Beispiel oder eine Mini-Story, um näher an 100-250 Wörter zu kommen.");
+  } else if (wordCount > 250) {
+    suggestions.push("Kürze den Text auf die stärksten Kernaussagen, damit Leser bis zum CTA dranbleiben.");
+  }
+
+  if (avgSentenceLength > 15) {
+    suggestions.push("Teile lange Sätze in kürzere Aussagen (8-15 Wörter), damit der Post leichter scanbar wird.");
+  }
+
+  if (avgParagraphLines > 3) {
+    suggestions.push("Baue mehr Absätze mit maximal 1-3 Zeilen ein, um die mobile Lesbarkeit zu erhöhen.");
+  }
+
+  if (emojiCount === 0) {
+    suggestions.push("Setze 1-3 passende Emojis als visuelle Anker ein, um wichtige Punkte hervorzuheben.");
+  } else if (emojiCount > 8) {
+    suggestions.push("Reduziere die Anzahl der Emojis auf maximal 8, damit der Post professionell und klar wirkt.");
+  }
+
+  if (cta.trim().length === 0) {
+    suggestions.push("Ergänze am Ende eine konkrete Handlungsaufforderung, z. B. \"Wie siehst du das?\".");
+  } else if (!/\?/.test(cta)) {
+    suggestions.push("Formuliere den CTA als Frage, um die Wahrscheinlichkeit für Antworten zu steigern.");
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push("Starker Post: Teste als Nächstes zwei Hook-Varianten und vergleiche Reichweite sowie Kommentarquote.");
+  }
+
+  return suggestions.slice(0, 4);
+}
+
 export function analyzePost(hook: string, content: string, cta: string): PostAnalytics {
   const fullText = [hook, content, cta].filter((p) => p.trim().length > 0).join("\n\n");
 
@@ -82,6 +138,7 @@ export function analyzePost(hook: string, content: string, cta: string): PostAna
       avgParagraphLines: 0,
       hookScore: { score: 0, hasQuestion: false, hasNumber: false, hasPowerWord: false, isShort: true },
       overallScore: 0,
+      suggestions: [],
     };
   }
 
@@ -151,6 +208,7 @@ export function analyzePost(hook: string, content: string, cta: string): PostAna
   }
 
   const overallScore = Math.round(overall);
+  const suggestions = buildSuggestions(wordCount, avgSentenceLength, avgParagraphLines, emojiCount, hookScoreResult, cta);
 
   return {
     wordCount,
@@ -161,5 +219,6 @@ export function analyzePost(hook: string, content: string, cta: string): PostAna
     avgParagraphLines,
     hookScore: hookScoreResult,
     overallScore,
+    suggestions,
   };
 }

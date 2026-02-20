@@ -156,6 +156,21 @@ export default function PostAnalytics({ hook, content, cta }: PostAnalyticsProps
           <HookDetail label="Kurz & prägnant" active={analytics.hookScore.isShort} />
         </div>
       </div>
+
+      {/* AI Suggestions */}
+      {analytics.suggestions.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-editor-muted uppercase tracking-wider">KI-Empfehlungen</div>
+          <ul className="space-y-1.5">
+            {analytics.suggestions.map((suggestion, index) => (
+              <li key={`${index}-${suggestion}`} className="text-xs text-editor-text bg-editor-surface-hover/60 rounded-lg px-3 py-2">
+                <span className="text-editor-success mr-1.5">→</span>
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
