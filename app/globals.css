@@ -14,6 +14,21 @@
   --editor-accent: #4F6AE6;
   --editor-accent-hover: #3D56D4;
   --editor-accent-foreground: #F8FAFF;
+  --editor-success: #0D8F5A;
+  --editor-success-foreground: #F4FFF9;
+  --editor-warning: #B06A00;
+  --editor-danger: #C93B3B;
+  --editor-danger-soft: rgba(201, 59, 59, 0.14);
+  --editor-overlay: rgba(9, 12, 24, 0.56);
+
+  --linkedin-blue: #0A66C2;
+  --linkedin-blue-hover: #004182;
+  --linkedin-light: #E8F0FE;
+  --linkedin-bg: #F4F2EE;
+  --linkedin-card: #FFFFFF;
+  --linkedin-text: #191919;
+  --linkedin-secondary: #666666;
+  --linkedin-border: #E0E0E0;
   --bg-gradient-1: rgba(79, 106, 230, 0.06);
   --bg-gradient-2: rgba(79, 106, 230, 0.04);
 }
@@ -28,6 +43,21 @@
   --editor-accent: #6C8AFF;
   --editor-accent-hover: #8BA3FF;
   --editor-accent-foreground: #111936;
+  --editor-success: #3ED598;
+  --editor-success-foreground: #072115;
+  --editor-warning: #F5B739;
+  --editor-danger: #FF7F8A;
+  --editor-danger-soft: rgba(255, 127, 138, 0.16);
+  --editor-overlay: rgba(3, 5, 14, 0.72);
+
+  --linkedin-blue: #7CB5FF;
+  --linkedin-blue-hover: #A9CEFF;
+  --linkedin-light: #1F2A45;
+  --linkedin-bg: #161D2E;
+  --linkedin-card: #1E273B;
+  --linkedin-text: #F2F5FA;
+  --linkedin-secondary: #B5C0D7;
+  --linkedin-border: #313E59;
   --bg-gradient-1: rgba(108, 138, 255, 0.06);
   --bg-gradient-2: rgba(108, 138, 255, 0.04);
 }

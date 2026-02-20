@@ -222,12 +222,12 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-editor-overlay backdrop-blur-sm p-0 sm:p-4"
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-black/40 animate-in overflow-hidden h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col"
+        className="w-full max-w-lg bg-editor-surface border border-editor-border rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-editor-overlay/70 animate-in overflow-hidden h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
@@ -269,13 +269,13 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
                 className={`
                   inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors
                   ${isRecording
-                    ? "border-red-400/60 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                    ? "border-editor-danger/60 bg-editor-danger-soft text-editor-danger hover:bg-editor-danger/20"
                     : "border-editor-border bg-editor-bg text-editor-text hover:bg-editor-surface-hover"
                   }
                   ${(!speechSupported || loading) ? "cursor-not-allowed opacity-50" : ""}
                 `}
               >
-                <span className={`h-2 w-2 rounded-full ${isRecording ? "bg-red-400 animate-pulse" : "bg-editor-muted"}`} />
+                <span className={`h-2 w-2 rounded-full ${isRecording ? "bg-editor-danger animate-pulse" : "bg-editor-muted"}`} />
                 {isRecording ? "Aufnahme stoppen" : "Thema einsprechen"}
               </button>
             </div>
@@ -357,7 +357,7 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
                 <button
                   onClick={() => setFile(null)}
                   disabled={loading}
-                  className="w-6 h-6 flex items-center justify-center rounded text-editor-muted hover:text-red-400 transition-colors disabled:opacity-30"
+                  className="w-6 h-6 flex items-center justify-center rounded text-editor-muted hover:text-editor-danger transition-colors disabled:opacity-30"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -422,13 +422,13 @@ export default function AIGenerator({ open, onClose, onGenerate }: AIGeneratorPr
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 shrink-0 mt-0.5">
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-editor-danger-soft border border-editor-danger/30 rounded-lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-editor-danger shrink-0 mt-0.5">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
                 <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
-              <span className="text-sm text-red-400">{error}</span>
+              <span className="text-sm text-editor-danger">{error}</span>
             </div>
           )}
 

@@ -69,9 +69,9 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
   const percentage = Math.min((charCount / MAX_CHARS) * 100, 100);
 
   const barColor = useMemo(() => {
-    if (isOverLimit) return "bg-red-500";
-    if (percentage > 80) return "bg-amber-400";
-    if (percentage > 60) return "bg-yellow-400";
+    if (isOverLimit) return "bg-editor-danger";
+    if (percentage > 80) return "bg-editor-warning";
+    if (percentage > 60) return "bg-editor-warning/70";
     return "bg-editor-accent";
   }, [isOverLimit, percentage]);
 
@@ -146,13 +146,13 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
           <div className="flex items-center justify-between text-xs">
             <span
               className={`font-mono tabular-nums ${
-                isOverLimit ? "text-red-400 font-semibold" : "text-editor-muted"
+                isOverLimit ? "text-editor-danger font-semibold" : "text-editor-muted"
               }`}
             >
               {charCount.toLocaleString("de-DE")} / {MAX_CHARS.toLocaleString("de-DE")} Zeichen
             </span>
             {isOverLimit && (
-              <span className="text-red-400 font-medium animate-pulse">
+              <span className="text-editor-danger font-medium animate-pulse">
                 {(charCount - MAX_CHARS).toLocaleString("de-DE")} zu viel
               </span>
             )}
@@ -269,7 +269,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
               isOverLimit || isEmpty
                 ? "bg-editor-surface/70 text-editor-muted/40 cursor-not-allowed border border-editor-border/70"
                 : copied
-                  ? "bg-green-500 text-white shadow-lg shadow-green-500/30"
+                  ? "bg-editor-success text-editor-success-foreground shadow-lg shadow-editor-success/30"
                   : "bg-editor-accent text-editor-accent-foreground hover:bg-editor-accent-hover shadow-lg shadow-editor-accent/30 hover:shadow-editor-accent/50 active:scale-[0.97]"
             }
           `}
