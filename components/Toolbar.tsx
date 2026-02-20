@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   toBold,
   toItalic,
@@ -10,10 +11,16 @@ import {
   isSelectionItalic,
   stripFormatting,
 } from "@/lib/unicode";
-import EmojiPickerPopover from "./EmojiPicker";
-import AsciiPicker from "./AsciiPicker";
 import TemplatePicker from "./TemplatePicker";
 import { PostTemplate } from "@/lib/templates";
+
+const EmojiPickerPopover = dynamic(() => import("./EmojiPicker"), {
+  ssr: false,
+});
+
+const AsciiPicker = dynamic(() => import("./AsciiPicker"), {
+  ssr: false,
+});
 
 interface ToolbarProps {
   activeFieldRef: React.RefObject<HTMLTextAreaElement> | null;
