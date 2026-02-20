@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 :root {
+  --font-dm-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-instrument-serif: "Georgia", "Times New Roman", serif;
   --editor-bg: #F5F6FA;
   --editor-surface: #FFFFFF;
   --editor-surface-hover: #F0F1F5;

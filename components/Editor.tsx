@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import Toolbar from "./Toolbar";
 import TextField from "./TextField";
 import Preview from "./Preview";
 import CharCount from "./CharCount";
 import ThemeToggle from "./ThemeToggle";
 import { PostTemplate } from "@/lib/templates";
-import AIGenerator from "./AIGenerator";
-import VisualGenerator from "./VisualGenerator";
 import { useHistory, EditorState } from "@/lib/useHistory";
+
+const AIGenerator = dynamic(() => import("./AIGenerator"), { ssr: false });
+const VisualGenerator = dynamic(() => import("./VisualGenerator"), { ssr: false });
 
 export default function Editor() {
   const { state, canUndo, canRedo, setField, setAll, undo, redo } = useHistory();
@@ -23,7 +25,7 @@ export default function Editor() {
   const [visualEnabled, setVisualEnabled] = useState(false);
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
 
-  const fields: Record<string, string> = { hook, content, cta };
+  const fields = useMemo<Record<string, string>>(() => ({ hook, content, cta }), [hook, content, cta]);
 
   const postText = useMemo(() => {
     const parts = [hook, content, cta].filter((p) => p.trim().length > 0);
