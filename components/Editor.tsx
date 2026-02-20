@@ -22,6 +22,7 @@ export default function Editor() {
   const [showVisualGenerator, setShowVisualGenerator] = useState(false);
   const [visualEnabled, setVisualEnabled] = useState(false);
   const [generatedVisual, setGeneratedVisual] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"edit" | "preview">("edit");
 
   const fields: Record<string, string> = { hook, content, cta };
 
@@ -86,26 +87,53 @@ export default function Editor() {
   }, [undo, redo]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       {/* Header */}
-      <header className="relative text-center mb-8 pt-8 sm:pt-12">
-        <div className="absolute right-0 top-8 sm:top-12">
+      <header className="mb-6 sm:mb-8 pt-6 sm:pt-12">
+        <div className="flex items-start justify-between gap-3 mb-4 sm:mb-0 sm:block">
+          <div className="text-left sm:text-center">
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-editor-text mb-2">
+              LinkedIn Post Editor
+            </h1>
+            <p className="text-editor-muted text-sm sm:text-base max-w-lg sm:mx-auto">
+              Verfasse, formatiere und kopiere deinen LinkedIn Post.
+              <br className="hidden sm:block" />
+              Unicode-Formatierung, die direkt in LinkedIn funktioniert.
+            </p>
+          </div>
           <ThemeToggle />
         </div>
-        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-editor-text mb-2">
-          LinkedIn Post Editor
-        </h1>
-        <p className="text-editor-muted text-sm sm:text-base max-w-lg mx-auto">
-          Verfasse, formatiere und kopiere deinen LinkedIn Post.
-          <br className="hidden sm:block" />
-          Unicode-Formatierung, die direkt in LinkedIn funktioniert.
-        </p>
       </header>
+
+      <div className="lg:hidden mb-4">
+        <div className="grid grid-cols-2 gap-2 rounded-xl bg-editor-surface border border-editor-border p-1">
+          <button
+            onClick={() => setMobileView("edit")}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mobileView === "edit"
+                ? "bg-editor-accent text-editor-accent-foreground"
+                : "text-editor-muted"
+            }`}
+          >
+            Editor
+          </button>
+          <button
+            onClick={() => setMobileView("preview")}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mobileView === "preview"
+                ? "bg-editor-accent text-editor-accent-foreground"
+                : "text-editor-muted"
+            }`}
+          >
+            Vorschau
+          </button>
+        </div>
+      </div>
 
       {/* Main Layout */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Editor Side */}
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className={`flex-1 min-w-0 space-y-4 ${mobileView === "preview" ? "hidden lg:block" : ""}`}>
           {/* Toolbar */}
           <Toolbar
             activeFieldRef={activeFieldRef}
@@ -169,7 +197,7 @@ export default function Editor() {
         </div>
 
         {/* Preview Side */}
-        <div className="lg:w-[380px] xl:w-[420px] shrink-0">
+        <div className={`lg:w-[380px] xl:w-[420px] shrink-0 ${mobileView === "edit" ? "hidden lg:block" : ""}`}>
           <div className="lg:sticky lg:top-6">
             <Preview
               hook={hook}
