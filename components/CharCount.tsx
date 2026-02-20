@@ -51,6 +51,7 @@ function parseMarkdown(md: string): { hook: string; content: string; cta: string
 export default function CharCount({ hook, content, cta, onVisualGenerate, visualEnabled = false, onImport }: CharCountProps) {
   const [copied, setCopied] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isGeneratingTeleprompter, setIsGeneratingTeleprompter] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mergedText = useMemo(() => {
@@ -111,6 +112,39 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }, [hook, content, cta]);
+
+  const handleGenerateTeleprompter = useCallback(async () => {
+    if (!hasPostContent || isGeneratingTeleprompter) return;
+
+    try {
+      setIsGeneratingTeleprompter(true);
+      const response = await fetch("/api/teleprompter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postText: mergedText }),
+      });
+
+      const data = await response.json() as { script?: string; error?: string };
+      if (!response.ok || !data.script) {
+        throw new Error(data.error || "Teleprompter konnte nicht erstellt werden.");
+      }
+
+      const blob = new Blob([data.script], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `youtube-short-teleprompter-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Teleprompter konnte nicht erstellt werden.";
+      alert(message);
+    } finally {
+      setIsGeneratingTeleprompter(false);
+    }
+  }, [hasPostContent, isGeneratingTeleprompter, mergedText]);
 
   const handleImportFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,6 +240,45 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
             <span>Export</span>
           </span>
         </button>
+
+          {/* Teleprompter */}
+          <button
+            onClick={handleGenerateTeleprompter}
+            disabled={!hasPostContent || isGeneratingTeleprompter}
+            title="YouTube-Short-Teleprompter als .md erstellen"
+            className={`px-3 py-3 rounded-xl text-sm font-medium shrink-0
+                     border transition-all duration-200
+                     ${!hasPostContent || isGeneratingTeleprompter
+                       ? disabledButtonClass
+                       : enabledSecondaryButtonClass
+                     }`}
+          >
+            <span className="flex items-center gap-1.5">
+              {isGeneratingTeleprompter ? (
+                <svg
+                  className="animate-spin"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 12a9 9 0 11-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="14" y2="17" />
+                </svg>
+              )}
+              <span>Teleprompter</span>
+            </span>
+          </button>
 
           {/* Analytics Toggle */}
           <button
