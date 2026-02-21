@@ -18,6 +18,8 @@ interface ImpressionPrediction {
   summary: string;
 }
 
+const UTF8_BOM = "\uFEFF";
+
 function exportToMarkdown(hook: string, content: string, cta: string): string {
   return `# Hook\n\n${hook}\n\n# Inhalt\n\n${content}\n\n# CTA\n\n${cta}\n`;
 }
@@ -168,7 +170,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
 
   const handleExport = useCallback(() => {
     const md = exportToMarkdown(hook, content, cta);
-    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([UTF8_BOM, md], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -195,7 +197,7 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
         throw new Error(data.error || "Teleprompter konnte nicht erstellt werden.");
       }
 
-      const blob = new Blob([data.script], { type: "text/markdown;charset=utf-8" });
+      const blob = new Blob([UTF8_BOM, data.script], { type: "text/markdown;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
