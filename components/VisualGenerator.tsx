@@ -12,18 +12,38 @@ interface VisualGeneratorProps {
 const TYPES = [
   { id: "infographic", label: "Infografik" },
   { id: "comic", label: "Comic" },
+  { id: "meme", label: "Meme" },
 ];
 
-const STYLES = [
-  { id: "flat", label: "Flat / Modern" },
-  { id: "sketchnote", label: "Sketchnote" },
-  { id: "corporate", label: "Corporate" },
-  { id: "retro", label: "Retro / Vintage" },
-  { id: "minimal", label: "Minimalistisch" },
-  { id: "playful", label: "Bunt / Playful" },
-  { id: "blueprint", label: "Technisch / Blueprint" },
-  { id: "watercolor", label: "Watercolor" },
-];
+const STYLES_BY_TYPE: Record<string, Array<{ id: string; label: string }>> = {
+  infographic: [
+    { id: "flat", label: "Flat / Modern" },
+    { id: "corporate", label: "Corporate" },
+    { id: "minimal", label: "Minimalistisch" },
+    { id: "blueprint", label: "Technisch / Blueprint" },
+    { id: "watercolor", label: "Watercolor" },
+  ],
+  comic: [
+    { id: "sketchnote", label: "Sketchnote" },
+    { id: "playful", label: "Bunt / Playful" },
+    { id: "retro", label: "Retro / Vintage" },
+    { id: "flat", label: "Flat / Modern" },
+    { id: "watercolor", label: "Watercolor" },
+  ],
+  meme: [
+    { id: "classic", label: "Classic Meme" },
+    { id: "modern", label: "Modern Social" },
+    { id: "office", label: "Office / Corporate Humor" },
+    { id: "reaction", label: "Reaction Format" },
+    { id: "minimal", label: "Minimal Meme" },
+  ],
+};
+
+const DEFAULT_STYLE_BY_TYPE: Record<string, string> = {
+  infographic: "flat",
+  comic: "sketchnote",
+  meme: "classic",
+};
 
 const RATIOS = [
   { id: "1:1", label: "1:1 (Quadrat)" },
@@ -46,6 +66,14 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const styles = STYLES_BY_TYPE[type] || STYLES_BY_TYPE.infographic;
+
+  useEffect(() => {
+    const validStyle = styles.some((s) => s.id === style);
+    if (!validStyle) {
+      setStyle(DEFAULT_STYLE_BY_TYPE[type] || styles[0]?.id || "flat");
+    }
+  }, [type, style, styles]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,7 +159,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
             </div>
             <div>
               <h2 className="text-base font-semibold text-editor-text">Visual generieren</h2>
-              <p className="text-xs text-editor-muted">Infografik oder Comic zum Post</p>
+              <p className="text-xs text-editor-muted">Infografik, Comic oder Meme zum Post</p>
             </div>
           </div>
           <button
@@ -160,7 +188,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
             <label className="block text-xs font-medium text-editor-muted uppercase tracking-wider mb-1.5">
               Typ
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {TYPES.map((t) => (
                 <button
                   key={t.id}
@@ -184,13 +212,23 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
                       </svg>
                       {t.label}
                     </span>
-                  ) : (
+                  ) : t.id === "comic" ? (
                     <span className="flex items-center justify-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="7" height="7" />
                         <rect x="14" y="3" width="7" height="7" />
                         <rect x="3" y="14" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
+                      </svg>
+                      {t.label}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 5h16v10H4z" />
+                        <path d="M8 19h8" />
+                        <path d="M7 9h.01" />
+                        <path d="M17 9h.01" />
                       </svg>
                       {t.label}
                     </span>
@@ -212,7 +250,7 @@ export default function VisualGenerator({ open, onClose, postText, onImageGenera
                 disabled={loading}
                 className={selectClasses}
               >
-                {STYLES.map((s) => (
+                {styles.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
                 ))}
               </select>

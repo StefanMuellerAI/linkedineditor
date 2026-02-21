@@ -133,17 +133,38 @@ const TYPE_PROMPTS: Record<string, string> = {
     "Create a professional infographic that visually summarizes the following LinkedIn post content. Use clear sections, icons, key statistics or bullet points rendered as visual elements. The infographic should be easy to read at a glance and suitable for a LinkedIn feed.",
   comic:
     "Create a comic strip or illustrated visual story that captures the essence of the following LinkedIn post content. Use 2-4 panels with characters, speech bubbles or captions. Make it engaging, memorable and suitable for a professional LinkedIn audience.",
+  meme:
+    "Create a LinkedIn-safe meme visual that captures the core message of the following post. Use a single punchy idea with clear visual hierarchy and short text overlays. Keep the humor smart, professional and relatable for a business audience.",
 };
 
-const STYLE_PROMPTS: Record<string, string> = {
-  flat: "Use a flat, modern design style with clean shapes, bold colors and sans-serif typography. Minimal gradients, strong contrast.",
-  sketchnote: "Use a hand-drawn sketchnote style with doodles, handwriting-like fonts, arrows and simple icons. Black and white with one or two accent colors.",
-  corporate: "Use a polished corporate style with professional color palette (navy, teal, white), clean grid layout, subtle gradients, business-appropriate imagery.",
-  retro: "Use a retro/vintage style with muted earth tones, halftone textures, bold serif fonts and a 70s/80s poster aesthetic.",
-  minimal: "Use a minimalist style with maximum white space, one accent color, thin lines, small elegant typography. Less is more.",
-  playful: "Use a colorful, playful style with bright saturated colors, rounded shapes, fun illustrations, dynamic composition. Energetic and eye-catching.",
-  blueprint: "Use a technical blueprint style with dark blue background, white/cyan line drawings, monospace fonts, technical diagrams and grid patterns.",
-  watercolor: "Use a soft watercolor illustration style with gentle color washes, organic shapes, hand-painted feel. Elegant and artistic.",
+const STYLE_PROMPTS_BY_TYPE: Record<string, Record<string, string>> = {
+  infographic: {
+    flat: "Use a flat, modern design style with clean shapes, bold colors and sans-serif typography. Minimal gradients, strong contrast.",
+    corporate: "Use a polished corporate style with professional color palette (navy, teal, white), clean grid layout, subtle gradients, business-appropriate imagery.",
+    minimal: "Use a minimalist style with maximum white space, one accent color, thin lines, small elegant typography. Less is more.",
+    blueprint: "Use a technical blueprint style with dark blue background, white/cyan line drawings, monospace fonts, technical diagrams and grid patterns.",
+    watercolor: "Use a soft watercolor illustration style with gentle color washes, organic shapes, hand-painted feel. Elegant and artistic.",
+  },
+  comic: {
+    sketchnote: "Use a hand-drawn sketchnote style with doodles, handwriting-like fonts, arrows and simple icons. Black and white with one or two accent colors.",
+    playful: "Use a colorful, playful style with bright saturated colors, rounded shapes, fun illustrations, dynamic composition. Energetic and eye-catching.",
+    retro: "Use a retro/vintage style with muted earth tones, halftone textures, bold serif fonts and a 70s/80s poster aesthetic.",
+    flat: "Use a clean flat-illustration comic style with strong outlines, simple shapes and modern color blocks.",
+    watercolor: "Use a soft watercolor comic style with expressive brush textures and gentle color transitions.",
+  },
+  meme: {
+    classic: "Use a classic meme style: high-contrast image, bold uppercase meme text with strong readability and clear joke setup/punchline structure.",
+    modern: "Use a modern social meme style with clean typography, contemporary color grading and minimal clutter.",
+    office: "Use an office/corporate humor meme style with business context visuals, polished look and subtle satire.",
+    reaction: "Use a reaction meme format with expressive character faces/body language and short impactful caption text.",
+    minimal: "Use a minimalist meme style with very little text, simple composition and one strong visual metaphor.",
+  },
+};
+
+const DEFAULT_STYLE_BY_TYPE: Record<string, string> = {
+  infographic: "flat",
+  comic: "sketchnote",
+  meme: "classic",
 };
 
 const RATIO_CONFIGS: Record<string, string> = {
@@ -182,8 +203,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kein Post-Text vorhanden. Schreibe zuerst einen Post." }, { status: 400 });
     }
 
-    const typePrompt = TYPE_PROMPTS[type || "infographic"] || TYPE_PROMPTS.infographic;
-    const stylePrompt = STYLE_PROMPTS[style || "flat"] || STYLE_PROMPTS.flat;
+    const normalizedType = TYPE_PROMPTS[type || ""] ? (type as string) : "infographic";
+    const styleMap = STYLE_PROMPTS_BY_TYPE[normalizedType] || STYLE_PROMPTS_BY_TYPE.infographic;
+    const defaultStyle = DEFAULT_STYLE_BY_TYPE[normalizedType] || DEFAULT_STYLE_BY_TYPE.infographic;
+    const normalizedStyle = style && styleMap[style] ? style : defaultStyle;
+    const typePrompt = TYPE_PROMPTS[normalizedType];
+    const stylePrompt = styleMap[normalizedStyle];
     const ratioPrompt = RATIO_CONFIGS[aspectRatio || "1:1"] || RATIO_CONFIGS["1:1"];
 
     const truncatedText = postText.length > 2000 ? postText.slice(0, 2000) + "..." : postText;
