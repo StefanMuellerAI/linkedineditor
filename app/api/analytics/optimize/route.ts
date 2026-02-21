@@ -10,24 +10,36 @@ interface OptimizePayload {
   suggestion?: string;
 }
 
-function extractJson(text: string): { hook: string; content: string; cta: string } | null {
-  try {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
+function parseOptimizeResponse(text: string): { hook: string; content: string; cta: string } | null {
+  const normalized = text
+    .replace(/```(?:json)?/gi, "")
+    .replace(/```/g, "")
+    .trim();
 
-    const parsed = JSON.parse(match[0]) as { hook?: string; content?: string; cta?: string };
-    if (typeof parsed.hook !== "string" || typeof parsed.content !== "string" || typeof parsed.cta !== "string") {
-      return null;
-    }
-
-    return {
-      hook: parsed.hook.trim(),
-      content: parsed.content.trim(),
-      cta: parsed.cta.trim(),
-    };
-  } catch {
-    return null;
+  const candidates: string[] = [normalized];
+  const objectMatch = normalized.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    candidates.push(objectMatch[0]);
   }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as { hook?: string; content?: string; cta?: string };
+      if (typeof parsed.hook !== "string" || typeof parsed.content !== "string" || typeof parsed.cta !== "string") {
+        continue;
+      }
+
+      return {
+        hook: parsed.hook.trim(),
+        content: parsed.content.trim(),
+        cta: parsed.cta.trim(),
+      };
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -58,13 +70,13 @@ export async function POST(request: NextRequest) {
     const response = await anthropic.messages.create({
       model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
       max_tokens: 900,
-      temperature: 0.4,
+      temperature: 0,
       system:
-        "Du bist ein LinkedIn-Redakteur. Optimiere Hook, Content und CTA entsprechend der vorgegebenen Empfehlung. Halte den Stil und das Thema des Originals bei. Gib nur valides JSON zurueck.",
+        "Du bist ein LinkedIn-Redakteur. Wende nur klar anwendbare Empfehlungen an und gib ausschliesslich valides JSON ohne Markdown oder Erklaerungen zurueck.",
       messages: [
         {
           role: "user",
-          content: `Wende diese Empfehlung an: ${suggestion}\n\nAktueller Post:\nHook: ${hook}\n\nContent: ${content}\n\nCTA: ${cta}\n\nRegeln:\n- Erhalte Sprache und Kontext des Posts\n- Nimm nur sinnvolle Aenderungen vor, aber verbessere alle drei Bereiche bei Bedarf\n- Maximal 2800 Zeichen fuer den gesamten Post\n\nAntworte NUR so:\n{"hook":"...","content":"...","cta":"..."}`,
+          content: `Pruefe zuerst, ob diese Empfehlung fuer den konkreten Text wirklich passt und sicher anwendbar ist: ${suggestion}\n\nAktueller Post:\nHook: ${hook}\n\nContent: ${content}\n\nCTA: ${cta}\n\nRegeln:\n- Erhalte Sprache, Stil, Ton und Kontext des Posts\n- Nimm nur Aenderungen vor, die direkt aus der Empfehlung ableitbar sind\n- Wenn die Empfehlung nicht sicher passt, gib Hook/Content/CTA unveraendert zurueck\n- Aendere nur die betroffenen Bereiche; unveraenderte Bereiche identisch lassen\n- Maximal 2800 Zeichen fuer den gesamten Post\n\nAntworte NUR so:\n{"hook":"...","content":"...","cta":"..."}`,
         },
       ],
     });
@@ -74,7 +86,7 @@ export async function POST(request: NextRequest) {
       .map((block) => block.text)
       .join("\n");
 
-    const parsed = extractJson(text);
+    const parsed = parseOptimizeResponse(text);
     if (!parsed) {
       return NextResponse.json(
         { error: "Die KI-Antwort konnte nicht verarbeitet werden." },
