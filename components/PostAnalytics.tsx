@@ -8,7 +8,8 @@ interface PostAnalyticsProps {
   content: string;
   cta: string;
   onApplySuggestion?: (suggestion: string) => Promise<void>;
-  optimizeLoading?: boolean;
+  activeOptimizingSuggestion?: string | null;
+  appliedSuggestions?: string[];
   optimizeError?: string | null;
 }
 
@@ -53,10 +54,15 @@ export default function PostAnalytics({
   content,
   cta,
   onApplySuggestion,
-  optimizeLoading = false,
+  activeOptimizingSuggestion = null,
+  appliedSuggestions = [],
   optimizeError = null,
 }: PostAnalyticsProps) {
   const analytics = useMemo(() => analyzePost(hook, content, cta), [hook, content, cta]);
+  const visibleSuggestions = useMemo(
+    () => analytics.suggestions.filter((suggestion) => !appliedSuggestions.includes(suggestion)),
+    [analytics.suggestions, appliedSuggestions]
+  );
 
   if (analytics.wordCount === 0) {
     return (
@@ -168,7 +174,7 @@ export default function PostAnalytics({
       </div>
 
       {/* AI Suggestions */}
-      {analytics.suggestions.length > 0 && (
+      {visibleSuggestions.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs font-medium text-editor-muted uppercase tracking-wider">KI-Empfehlungen</div>
           {optimizeError && (
@@ -177,7 +183,7 @@ export default function PostAnalytics({
             </p>
           )}
           <ul className="space-y-1.5">
-            {analytics.suggestions.map((suggestion, index) => (
+            {visibleSuggestions.map((suggestion, index) => (
               <li key={`${index}-${suggestion}`} className="text-xs text-editor-text bg-editor-surface-hover/60 rounded-lg px-3 py-2">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -188,10 +194,10 @@ export default function PostAnalytics({
                     <button
                       type="button"
                       onClick={() => onApplySuggestion(suggestion)}
-                      disabled={optimizeLoading}
+                      disabled={Boolean(activeOptimizingSuggestion)}
                       className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md border border-editor-border bg-editor-bg px-2.5 py-1.5 text-[11px] font-medium text-editor-text transition-colors hover:bg-editor-surface disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {optimizeLoading ? "Wird angewendet..." : "Mit KI anwenden"}
+                      {activeOptimizingSuggestion === suggestion ? "Wird angewendet..." : "Mit KI anwenden"}
                     </button>
                   )}
                 </div>

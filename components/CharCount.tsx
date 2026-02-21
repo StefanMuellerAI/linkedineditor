@@ -60,7 +60,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
   const [prediction, setPrediction] = useState<ImpressionPrediction | null>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [predictionError, setPredictionError] = useState<string | null>(null);
-  const [optimizeLoading, setOptimizeLoading] = useState(false);
+  const [activeOptimizingSuggestion, setActiveOptimizingSuggestion] = useState<string | null>(null);
+  const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,6 +119,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
 
   const openAnalyticsModal = useCallback(() => {
     if (!canOpenAnalytics) return;
+    setPrediction(null);
+    setPredictionError(null);
     setShowAnalyticsModal(true);
     void fetchPrediction();
   }, [canOpenAnalytics, fetchPrediction]);
@@ -209,10 +212,15 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
     }
   }, [hasPostContent, isGeneratingTeleprompter, mergedText]);
 
-  const handleApplySuggestion = useCallback(async (suggestion: string) => {
-    if (!onImport || optimizeLoading) return;
+  React.useEffect(() => {
+    setAppliedSuggestions([]);
+    setOptimizeError(null);
+  }, [hook, content, cta]);
 
-    setOptimizeLoading(true);
+  const handleApplySuggestion = useCallback(async (suggestion: string) => {
+    if (!onImport || activeOptimizingSuggestion) return;
+
+    setActiveOptimizingSuggestion(suggestion);
     setOptimizeError(null);
 
     try {
@@ -233,13 +241,14 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
         throw new Error(data.error || "Die KI-Optimierung konnte nicht angewendet werden.");
       }
 
+      setAppliedSuggestions((prev) => (prev.includes(suggestion) ? prev : [...prev, suggestion]));
       onImport({ hook: data.hook, content: data.content, cta: data.cta });
     } catch (error) {
       setOptimizeError(error instanceof Error ? error.message : "Die KI-Optimierung konnte nicht angewendet werden.");
     } finally {
-      setOptimizeLoading(false);
+      setActiveOptimizingSuggestion(null);
     }
-  }, [content, cta, hook, onImport, optimizeLoading]);
+  }, [activeOptimizingSuggestion, content, cta, hook, onImport]);
 
   const handleImportFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -468,7 +477,8 @@ export default function CharCount({ hook, content, cta, onVisualGenerate, visual
                   content={content}
                   cta={cta}
                   onApplySuggestion={onImport ? handleApplySuggestion : undefined}
-                  optimizeLoading={optimizeLoading}
+                  activeOptimizingSuggestion={activeOptimizingSuggestion}
+                  appliedSuggestions={appliedSuggestions}
                   optimizeError={optimizeError}
                 />
               </div>
