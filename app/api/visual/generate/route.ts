@@ -32,6 +32,44 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getRetryAfterMs(err: unknown): number | null {
+  if (typeof err !== "object" || err === null) return null;
+
+  const maybeErr = err as {
+    headers?: unknown;
+    response?: { headers?: { get?: (key: string) => string | null } };
+  };
+
+  let headerFromGet: string | null | undefined;
+  let headerFromMap: string | null | undefined;
+
+  if (maybeErr.headers && typeof maybeErr.headers === "object") {
+    const headersWithGet = maybeErr.headers as { get?: (key: string) => string | null };
+    if (typeof headersWithGet.get === "function") {
+      headerFromGet = headersWithGet.get("retry-after");
+    } else {
+      const headersAsRecord = maybeErr.headers as Record<string, string | null | undefined>;
+      headerFromMap = headersAsRecord["retry-after"];
+    }
+  }
+
+  const headerFromResponse = maybeErr.response?.headers?.get?.("retry-after");
+  const headerValue = headerFromGet ?? headerFromMap ?? headerFromResponse;
+
+  if (!headerValue) return null;
+
+  const seconds = Number(headerValue);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return Math.round(seconds * 1000);
+  }
+
+  const retryDate = Date.parse(headerValue);
+  if (!Number.isNaN(retryDate)) {
+    return Math.max(0, retryDate - Date.now());
+  }
+
+  return null;
+}
 function getErrorDetails(err: unknown): { status?: number; message: string } {
   if (typeof err === "object" && err !== null) {
     const maybeStatus = (err as { status?: number; statusCode?: number; code?: number }).status
@@ -56,7 +94,7 @@ async function generateVisualWithRetry(
   ai: GoogleGenAI,
   model: string,
   prompt: string,
-  maxAttempts = 3
+  maxAttempts = 5
 ) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -71,19 +109,32 @@ async function generateVisualWithRetry(
       const { status, message } = getErrorDetails(err);
       const lowerMessage = message.toLowerCase();
       const isRetriable =
+        status === 408 ||
+        status === 409 ||
+        status === 425 ||
         status === 429 ||
         status === 500 ||
+        status === 502 ||
         status === 503 ||
+        status === 504 ||
         lowerMessage.includes("rate limit") ||
         lowerMessage.includes("overloaded") ||
         lowerMessage.includes("temporar") ||
-        isStatusMentioned(lowerMessage, [429, 500, 503]);
+        lowerMessage.includes("timeout") ||
+        lowerMessage.includes("timed out") ||
+        lowerMessage.includes("econnreset") ||
+        lowerMessage.includes("socket hang up") ||
+        lowerMessage.includes("network") ||
+        isStatusMentioned(lowerMessage, [408, 409, 425, 429, 500, 502, 503, 504]);
       if (!isRetriable || attempt === maxAttempts) {
         throw err;
       }
 
-      const backoffMs = 1200 * Math.pow(2, attempt - 1);
-      console.warn(`Gemini retry ${attempt}/${maxAttempts} due to ${status || "unknown"}: ${message}`);
+      const baseBackoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 12_000);
+      const jitteredBackoffMs = Math.round(baseBackoffMs * (0.7 + Math.random() * 0.6));
+      const retryAfterMs = getRetryAfterMs(err);
+      const backoffMs = retryAfterMs ? Math.max(jitteredBackoffMs, retryAfterMs) : jitteredBackoffMs;
+      console.warn(`Gemini retry ${attempt}/${maxAttempts} in ${backoffMs}ms due to ${status || "unknown"}: ${message}`);
       await sleep(backoffMs);
     }
   }
@@ -96,6 +147,27 @@ function isModelNotFoundError(err: unknown): boolean {
   const msg = message.toLowerCase();
   return status === 404 || (msg.includes("model") && (msg.includes("not found") || msg.includes("not_found") || msg.includes("unsupported")));
 }
+function isRetriableGeminiError(err: unknown): boolean {
+  const { status, message } = getErrorDetails(err);
+  const msg = message.toLowerCase();
+  return (
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    msg.includes("rate limit") ||
+    msg.includes("overloaded") ||
+    msg.includes("temporar") ||
+    msg.includes("timeout") ||
+    msg.includes("network") ||
+    isStatusMentioned(msg, [408, 409, 425, 429, 500, 502, 503, 504])
+  );
+}
+
 
 function getImageModelCandidates(): string[] {
   const envModel = process.env.GEMINI_IMAGE_MODEL?.trim();
@@ -118,10 +190,15 @@ async function generateVisualWithModelFallback(ai: GoogleGenAI, prompt: string) 
       return { response, model };
     } catch (err) {
       lastError = err;
-      if (!isModelNotFoundError(err)) {
-        throw err;
+      if (isModelNotFoundError(err)) {
+        console.warn(`Gemini image model '${model}' not found, trying next fallback model.`);
+        continue;
       }
-      console.warn(`Gemini image model '${model}' not found, trying next fallback model.`);
+      if (isRetriableGeminiError(err)) {
+        console.warn(`Gemini model '${model}' failed transiently, trying next fallback model.`);
+        continue;
+      }
+      throw err;
     }
   }
 
