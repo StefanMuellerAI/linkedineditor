@@ -118,10 +118,6 @@ function buildSuggestions(
     suggestions.push("Formuliere den CTA als Frage, um die Wahrscheinlichkeit für Antworten zu steigern.");
   }
 
-  if (suggestions.length === 0) {
-    suggestions.push("Starker Post: Teste als Nächstes zwei Hook-Varianten und vergleiche Reichweite sowie Kommentarquote.");
-  }
-
   return suggestions.slice(0, 4);
 }
 
